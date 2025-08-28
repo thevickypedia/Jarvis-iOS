@@ -60,3 +60,18 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
+
+# Xcode project/workspace state
+*.xcuserstate
+*.xcscmblueprint
+
+# Xcode's shared data that's safe to ignore unless you want to share schemes
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
+
+# Derived data and build artifacts
+DerivedData/
+build/
+
+# macOS system files
+.DS_Store
