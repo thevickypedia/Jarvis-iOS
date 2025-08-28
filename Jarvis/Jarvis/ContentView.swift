@@ -6,19 +6,31 @@
 //
 
 import SwiftUI
+import Speech
+import AVFoundation
+import SwiftUI
 
 struct ContentView: View {
+    @StateObject private var speechRecognizer = SpeechRecognizer()
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        VStack(spacing: 30) {
+            Text(speechRecognizer.recognizedText)
+                .padding()
+                .multilineTextAlignment(.center)
+            
+            Button(action: {
+                speechRecognizer.toggleRecording()
+            }) {
+                Image(systemName: speechRecognizer.isRecording ? "mic.fill" : "mic.circle")
+                    .resizable()
+                    .frame(width: 80, height: 80)
+                    .foregroundColor(.blue)
+            }
         }
         .padding()
+        .onAppear {
+            speechRecognizer.requestPermissions()
+        }
     }
-}
-
-#Preview {
-    ContentView()
 }
