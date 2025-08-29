@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 56;
 	objects = {
 
 /* Begin PBXContainerItemProxy section */
@@ -208,7 +208,6 @@
 			);
 			mainGroup = 98A2AA032E6067B100FB3A6A;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
 			productRefGroup = 98A2AA0D2E6067B100FB3A6A /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
