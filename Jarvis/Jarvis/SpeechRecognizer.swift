@@ -154,52 +154,8 @@ class SpeechRecognizer: ObservableObject {
         return
         #endif
 
-        recognizedText = "Listening..."
-
         let node = audioEngine.inputNode
         node.removeTap(onBus: 0)
-
-        request = SFSpeechAudioBufferRecognitionRequest()
-        request?.shouldReportPartialResults = true
-
-        recognitionTask = speechRecognizer?.recognitionTask(with: request!) { [weak self] result, error in
-            guard let self = self else { return }
-
-            if let result = result {
-                if !result.bestTranscription.formattedString.isEmpty {
-                    self.cancelNoSpeechTimer()
-                }
-                if result.isFinal {
-                    self.stopRecording(true)
-                    self.recognizedText = "Processing..."
-                    let command = result.bestTranscription.formattedString
-                    Log.info("Server request: \(command)")
-                    let response = self.makeServerRequestSync(
-                        serverURL: serverURL,
-                        password: password,
-                        transitProtection: transitProtection,
-                        command: command
-                    )
-                    Log.info("Server response: \(response)")
-                    self.recognizedText = response
-                } else {
-                    DispatchQueue.main.async {
-                        self.recognizedText = result.bestTranscription.formattedString
-                        Log.debug("Partial: \(result.bestTranscription.formattedString)")
-                    }
-                    // Only reset silence timer if listener is still active
-                    self.resetSilenceTimer()
-                }
-            }
-
-            if let error = error {
-                Log.error("Recognition error: \(error.localizedDescription)")
-                DispatchQueue.main.async {
-                    self.recognitionError = error.localizedDescription
-                }
-                self.stopRecording()
-            }
-        }
 
         do {
             // STEP 1: Configure & activate audio session first
@@ -207,7 +163,7 @@ class SpeechRecognizer: ObservableObject {
             try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
             try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
 
-            // STEP 2: NOW fetch input format (will be valid)
+            // STEP 2: NOW fetch input format
             let format = node.inputFormat(forBus: 0)
             Log.info("Input Format: sampleRate = \(format.sampleRate), channels = \(format.channelCount)")
 
@@ -227,9 +183,52 @@ class SpeechRecognizer: ObservableObject {
             try audioEngine.start()
             self.startNoSpeechTimer()
 
-            DispatchQueue.main.async {
-                self.isRecording = true
+            self.recognizedText = "Listening..."
+            self.isRecording = true
+
+            // ✅ STEP 4: NOW create the recognition request & task
+            request = SFSpeechAudioBufferRecognitionRequest()
+            request?.shouldReportPartialResults = true
+
+            recognitionTask = speechRecognizer?.recognitionTask(with: request!) { [weak self] result, error in
+                guard let self = self else { return }
+
+                if let result = result {
+                    if !result.bestTranscription.formattedString.isEmpty {
+                        self.cancelNoSpeechTimer()
+                    }
+                    if result.isFinal {
+                        self.stopRecording(true)
+                        self.recognizedText = "Processing..."
+                        let command = result.bestTranscription.formattedString
+                        Log.info("Server request: \(command)")
+                        let response = self.makeServerRequestSync(
+                            serverURL: serverURL,
+                            password: password,
+                            transitProtection: transitProtection,
+                            command: command
+                        )
+                        Log.info("Server response: \(response)")
+                        self.recognizedText = response
+                    } else {
+                        DispatchQueue.main.async {
+                            self.recognizedText = result.bestTranscription.formattedString
+                            Log.debug("Partial: \(result.bestTranscription.formattedString)")
+                        }
+                    // Only reset silence timer if listener is still active
+                        self.resetSilenceTimer()
+                    }
+                }
+
+                if let error = error {
+                    Log.error("Recognition error: \(error.localizedDescription)")
+                    DispatchQueue.main.async {
+                        self.recognitionError = error.localizedDescription
+                    }
+                    self.stopRecording()
+                }
             }
+
         } catch {
             Log.error("Audio engine error: \(error.localizedDescription)")
             DispatchQueue.main.async {
