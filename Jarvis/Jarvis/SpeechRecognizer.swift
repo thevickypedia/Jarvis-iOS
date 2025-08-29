@@ -10,6 +10,10 @@ import AVFoundation
 import Speech
 import Combine
 
+struct ServerResponse: Decodable {
+    let detail: String
+}
+
 class SpeechRecognizer: ObservableObject {
     @Published var recognizedText = "Tap the mic to speak..."
     @Published var isRecording = false
@@ -67,10 +71,8 @@ class SpeechRecognizer: ObservableObject {
     func parseServerResponse(data: Data?) -> String {
         if let data = data {
             do {
-                let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
-                return (json?["detail"] as? String) ?? {
-                    String(data: data, encoding: .utf8) ?? "❌ Unable to decode response."
-                }()
+                let decoded = try JSONDecoder().decode(ServerResponse.self, from: data)
+                return decoded.detail
             } catch {
                 return String(data: data, encoding: .utf8) ?? "❌ JSON parsing failed and response is undecodable."
             }
@@ -167,14 +169,14 @@ class SpeechRecognizer: ObservableObject {
                     self.stopRecording(true)
                     self.recognizedText = "Processing..."
                     let command = result.bestTranscription.formattedString
-                    Log.info("Final recognized: \(command)")
+                    Log.info("Server request: \(command)")
                     let response = self.makeServerRequestSync(
                         serverURL: serverURL,
                         password: password,
                         transitProtection: transitProtection,
                         command: command
                     )
-                    Log.debug("Server response: \(response)")
+                    Log.info("Server response: \(response)")
                     self.recognizedText = response
                 } else {
                     DispatchQueue.main.async {
