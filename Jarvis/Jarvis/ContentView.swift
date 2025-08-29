@@ -6,8 +6,6 @@
 //
 
 import SwiftUI
-import Speech
-import AVFoundation
 
 struct ContentView: View {
     @State private var knownServers: [String] = []
@@ -25,73 +23,11 @@ struct ContentView: View {
     @State private var showLogoutMessage = false
     @State private var statusMessage: String?
 
-    @StateObject private var speechRecognizer = SpeechRecognizer()
-
-    var recordingPage: some View {
-        ZStack {
-            VStack(spacing: 30) {
-                Text(speechRecognizer.recognizedText)
-                    .padding()
-                    .multilineTextAlignment(.center)
-
-                Button(action: {
-                    speechRecognizer.toggleRecording()
-                }) {
-                    Image(systemName: speechRecognizer.isRecording ? "mic.fill" : "mic.circle")
-                        .resizable()
-                        .frame(width: 80, height: 80)
-                        .foregroundColor(.blue)
-                }
-            }
-            .padding()
-            .onAppear {
-                speechRecognizer.requestPermissions()
-            }
-
-            // 🔝 Logout Button at Top-Right
-            VStack {
-                HStack {
-                    Spacer()
-                    Button(action: {
-                        Log.info("Logged out!")
-                        handleLogout(false)
-                    }) {
-                        Image(systemName: "rectangle.portrait.and.arrow.right")
-                            .font(.title2)
-                            .padding()
-                    }
-                }
-                Spacer()
-            }
-
-            // 🌗 Floating Theme Toggle Button at Bottom-Right
-            VStack {
-                Spacer()
-                HStack {
-                    Spacer()
-                    Button(action: {
-                        themeManager.colorScheme = themeManager.colorScheme == .dark ? .light : .dark
-                    }) {
-                        Image(systemName: themeManager.colorScheme == .dark ? "sun.max.fill" : "moon.fill")
-                            .font(.title2)
-                            .foregroundColor(.white)
-                            .padding()
-                            .background(Color.blue)
-                            .clipShape(Circle())
-                            .shadow(radius: 4)
-                    }
-                    .padding(.trailing, 20)
-                    .padding(.bottom, 30)
-                }
-            }
-        }
-    }
-
     var body: some View {
         NavigationStack {
             Group {
                 if isLoggedIn {
-                    recordingPage
+                    RecorderView(handleLogout: handleLogout)
                 } else {
                     loginView
                 }
