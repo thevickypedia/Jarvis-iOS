@@ -64,7 +64,7 @@ class SpeechRecognizer: ObservableObject {
         noSpeechTimer = nil
     }
 
-    func makeServerRequest(serverURL: String, password: String, transitProtection: Bool) {
+    func makeServerRequest(serverURL: String, password: String, transitProtection: Bool, command: String) {
         guard let url = URL(string: "\(serverURL)/offline-communicator") else {
             Log.error("Invalid URL")
             return
@@ -79,7 +79,7 @@ class SpeechRecognizer: ObservableObject {
         request.setValue("Bearer \(authHeader)", forHTTPHeaderField: "Authorization")
 
         let payload: [String: Any] = [
-            "command": self.recognizedText,
+            "command": command,
             "native_audio": false,
             "speech_timeout": 0
         ]
@@ -106,7 +106,9 @@ class SpeechRecognizer: ObservableObject {
             if httpResponse.statusCode == 200 {
                 if let data = data, let responseString = String(data: data, encoding: .utf8) {
                     Log.info("📦 Server Response: \(responseString)")
-                    // TODO: Dispatch and display
+                    DispatchQueue.main.async {
+                        self.recognizedText = responseString
+                    }
                 } else {
                     Log.info("📦 Empty response body or decoding failed.")
                 }
@@ -139,12 +141,18 @@ class SpeechRecognizer: ObservableObject {
                     self.cancelNoSpeechTimer()
                 }
                 if result.isFinal {
+                    // TODO: Remove all dispatch and make this blocking call with a timeout
                     DispatchQueue.main.async {
-                        self.recognizedText = result.bestTranscription.formattedString
+                        self.recognizedText = "Processing..."
                         Log.info("Final recognized: \(self.recognizedText)")
-                        self.makeServerRequest(serverURL: serverURL, password: password, transitProtection: transitProtection)
+                        self.makeServerRequest(
+                            serverURL: serverURL,
+                            password: password,
+                            transitProtection: transitProtection,
+                            command: result.bestTranscription.formattedString
+                        )
                     }
-                    self.stopRecording()
+                    self.stopRecording(true)
                 } else {
                     DispatchQueue.main.async {
                         self.recognizedText = result.bestTranscription.formattedString
@@ -193,7 +201,7 @@ class SpeechRecognizer: ObservableObject {
         }
     }
 
-    func stopRecording() {
+    func stopRecording(_ isProcessing: Bool = false) {
         audioEngine.stop()
         audioEngine.inputNode.removeTap(onBus: 0)
 
@@ -208,7 +216,12 @@ class SpeechRecognizer: ObservableObject {
 
         DispatchQueue.main.async {
             self.isRecording = false
-            self.recognizedText = "Tap the mic to speak..."
+        }
+
+        if !isProcessing {
+            DispatchQueue.main.async {
+                self.recognizedText = "Tap the mic to speak..."
+            }
         }
     }
 
