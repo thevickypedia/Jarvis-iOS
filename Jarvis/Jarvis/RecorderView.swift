@@ -75,5 +75,14 @@ struct RecorderView: View {
                 }
             }
         }
+        .alert("Error",
+               isPresented: .constant(speechRecognizer.audioEngineError != nil || speechRecognizer.recognitionError != nil)) {
+            Button("OK", role: .cancel) {
+                speechRecognizer.audioEngineError = nil
+                speechRecognizer.recognitionError = nil
+            }
+        } message: {
+            Text(speechRecognizer.audioEngineError ?? speechRecognizer.recognitionError ?? "Unknown error")
+        }
     }
 }

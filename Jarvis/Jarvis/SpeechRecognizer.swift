@@ -17,6 +17,8 @@ struct ServerResponse: Decodable {
 class SpeechRecognizer: ObservableObject {
     @Published var recognizedText = "Tap the mic to speak..."
     @Published var isRecording = false
+    @Published var audioEngineError: String?
+    @Published var recognitionError: String?
 
     private let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
     private let audioEngine = AVAudioEngine()
@@ -146,7 +148,9 @@ class SpeechRecognizer: ObservableObject {
     func startRecording(serverURL: String, password: String, transitProtection: Bool) {
         #if targetEnvironment(simulator)
         Log.error("Simulator can't use microphone input.")
-        recognizedText = "Simulator can't record audio"
+        DispatchQueue.main.async {
+            self.audioEngineError = "Simulator can't record audio"
+        }
         return
         #endif
 
@@ -190,6 +194,9 @@ class SpeechRecognizer: ObservableObject {
 
             if let error = error {
                 Log.error("Recognition error: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    self.recognitionError = error.localizedDescription
+                }
                 self.stopRecording()
             }
         }
@@ -206,6 +213,9 @@ class SpeechRecognizer: ObservableObject {
 
             guard format.sampleRate > 0, format.channelCount > 0 else {
                 Log.error("Invalid input format. Cannot start recording.")
+                DispatchQueue.main.async {
+                    self.audioEngineError = "Invalid microphone input format."
+                }
                 return
             }
 
@@ -222,6 +232,9 @@ class SpeechRecognizer: ObservableObject {
             }
         } catch {
             Log.error("Audio engine error: \(error.localizedDescription)")
+            DispatchQueue.main.async {
+                self.audioEngineError = error.localizedDescription
+            }
         }
     }
 
