@@ -27,23 +27,62 @@ struct ContentView: View {
     @StateObject private var speechRecognizer = SpeechRecognizer()
 
     var recordingPage: some View {
-        VStack(spacing: 30) {
-            Text(speechRecognizer.recognizedText)
-                .padding()
-                .multilineTextAlignment(.center)
+        ZStack {
+            VStack(spacing: 30) {
+                Text(speechRecognizer.recognizedText)
+                    .padding()
+                    .multilineTextAlignment(.center)
 
-            Button(action: {
-                speechRecognizer.toggleRecording()
-            }) {
-                Image(systemName: speechRecognizer.isRecording ? "mic.fill" : "mic.circle")
-                    .resizable()
-                    .frame(width: 80, height: 80)
-                    .foregroundColor(.blue)
+                Button(action: {
+                    speechRecognizer.toggleRecording()
+                }) {
+                    Image(systemName: speechRecognizer.isRecording ? "mic.fill" : "mic.circle")
+                        .resizable()
+                        .frame(width: 80, height: 80)
+                        .foregroundColor(.blue)
+                }
             }
-        }
-        .padding()
-        .onAppear {
-            speechRecognizer.requestPermissions()
+            .padding()
+            .onAppear {
+                speechRecognizer.requestPermissions()
+            }
+
+            // 🔝 Logout Button at Top-Right
+            VStack {
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        Log.info("Logged out!")
+                        handleLogout(false)
+                    }) {
+                        Image(systemName: "rectangle.portrait.and.arrow.right")
+                            .font(.title2)
+                            .padding()
+                    }
+                }
+                Spacer()
+            }
+
+            // 🌗 Floating Theme Toggle Button at Bottom-Right
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        themeManager.colorScheme = themeManager.colorScheme == .dark ? .light : .dark
+                    }) {
+                        Image(systemName: themeManager.colorScheme == .dark ? "sun.max.fill" : "moon.fill")
+                            .font(.title2)
+                            .foregroundColor(.white)
+                            .padding()
+                            .background(Color.blue)
+                            .clipShape(Circle())
+                            .shadow(radius: 4)
+                    }
+                    .padding(.trailing, 20)
+                    .padding(.bottom, 30)
+                }
+            }
         }
     }
 
@@ -254,6 +293,7 @@ struct ContentView: View {
 
     func login() async {
         if serverURL.isEmpty || password.isEmpty {
+            Log.error("Missing credentials. URL: \(serverURL), Password Empty: \(password.isEmpty)")
             errorMessage = "Credentials are required to login!"
             return
         }
@@ -305,6 +345,7 @@ struct ContentView: View {
             if httpResponse.statusCode == 200 {
                 isLoggedIn = true
                 statusMessage = "✅ Login successful!"
+                Log.info("✅ Login successful!")
                 if useFaceID {
                     KeychainHelper.saveSession(
                         serverURL: serverURL,
@@ -345,25 +386,36 @@ struct ContentView: View {
     }
 
     func biometricSignIn() {
-        // Force remembering username whenever FaceID is toggled
+        Log.info("🔐 Starting biometric authentication")
         KeychainHelper.authenticateWithBiometrics { success in
-            Task {
-                guard success,
-                      let session = KeychainHelper.loadSession(),
-                      let serverURL = session["serverURL"],
-                      self.serverURL == self.serverURL
-                else {
-                    DispatchQueue.main.async {
-                        useFaceID = false // fallback to manual login
-                    }
-                    return
+            Log.info("🔐 Biometric auth completed: \(success)")
+            
+            guard success,
+                  let session = KeychainHelper.loadSession(),
+                  let serverURL = session["serverURL"],
+                  let password = session["password"],
+                  self.serverURL == serverURL
+            else {
+                DispatchQueue.main.async {
+                    useFaceID = false
                 }
+                return
+            }
+
+            DispatchQueue.main.async {
+                self.password = password
+            }
+
+            Task {
+                Log.info("🔁 Initiating server handshake")
+                await login()
+                Log.info("✅ Finished login")
 
                 DispatchQueue.main.async {
                     isLoggedIn = true
                     statusMessage = "✅ Face ID login successful!"
                 }
-                Log.info("✅ Face ID login successful")
+
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                     statusMessage = nil
                 }
