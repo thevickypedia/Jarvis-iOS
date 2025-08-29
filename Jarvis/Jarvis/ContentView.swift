@@ -10,7 +10,6 @@ import Speech
 import AVFoundation
 
 
-
 struct ContentView: View {
     @State private var knownServers: [String] = []
     @State private var showAddServerAlert = false
@@ -18,6 +17,7 @@ struct ContentView: View {
     @State private var serverURL = ""
     @State private var password = ""
     @AppStorage("useFaceID") private var useFaceID: Bool = false
+    @EnvironmentObject var themeManager: ThemeManager
 
     @State private var isLoading = false
     @State private var errorMessage: String?
@@ -149,6 +149,40 @@ struct ContentView: View {
                     .padding()
                     .transition(.opacity)
             }
+
+            Spacer()
+
+            // 🌗 Theme toggle
+            Button(action: {
+                themeManager.colorScheme = themeManager.colorScheme == .dark ? .light : .dark
+            }) {
+                Image(systemName: themeManager.colorScheme == .dark ? "sun.max.fill" : "moon.fill")
+                    .font(.title2)
+                    .foregroundColor(.white)
+                    .padding()
+                    .background(Color.blue)
+                    .clipShape(Circle())
+                    .shadow(radius: 4)
+            }
+            .padding(.bottom, 20)
+
+            // Footer
+            VStack(spacing: 2) {
+                if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
+                   let url = URL(string: "https://github.com/thevickypedia/Jarvis-iOS/releases/tag/v\(version)") {
+                    Link("Version: \(version)", destination: url)
+                        .font(.footnote)
+                        .foregroundColor(.blue)
+                } else {
+                    Link("Version: unknown", destination: URL(string: "https://github.com/thevickypedia/Jarvis-iOS/releases")!)
+                        .font(.footnote)
+                        .foregroundColor(.gray)
+                }
+                Link("© 2025 Vignesh Rao", destination: URL(string: "https://vigneshrao.com")!)
+                    .font(.footnote)
+                    .foregroundColor(.blue)
+            }
+            .padding(.bottom, 8)
         }
         .padding()
         .onAppear {
@@ -325,12 +359,12 @@ struct ContentView: View {
                     }
                     return
                 }
-                // TODO: Add a server handshake call
+
                 DispatchQueue.main.async {
                     isLoggedIn = true
                     statusMessage = "✅ Face ID login successful!"
                 }
-                print("✅ Face ID login successful")
+                Log.info("✅ Face ID login successful")
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
                     statusMessage = nil
                 }
