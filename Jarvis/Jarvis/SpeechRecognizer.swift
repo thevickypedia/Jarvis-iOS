@@ -18,6 +18,7 @@ class SpeechRecognizer: ObservableObject {
     private let audioEngine = AVAudioEngine()
     private var request: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
+    private var silenceTimer: Timer?
 
     func requestPermissions() {
         SFSpeechRecognizer.requestAuthorization { authStatus in
@@ -38,6 +39,14 @@ class SpeechRecognizer: ObservableObject {
                     print("Microphone access denied")
                 }
             }
+        }
+    }
+
+    private func resetSilenceTimer() {
+        silenceTimer?.invalidate()
+        silenceTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: false) { [weak self] _ in
+            print("Silence detected, stopping...")
+            self?.stopRecording()
         }
     }
 
@@ -64,6 +73,9 @@ class SpeechRecognizer: ObservableObject {
                     self.recognizedText = result.bestTranscription.formattedString
                     print("Recognized: \(self.recognizedText)")
                 }
+
+                // Reset silence timer every time speech is detected
+                self.resetSilenceTimer()
             }
 
             if error != nil || (result?.isFinal ?? false) {
@@ -107,6 +119,8 @@ class SpeechRecognizer: ObservableObject {
         recognitionTask?.cancel()
         recognitionTask = nil
         request = nil
+        silenceTimer?.invalidate()
+        silenceTimer = nil
 
         DispatchQueue.main.async {
             self.isRecording = false

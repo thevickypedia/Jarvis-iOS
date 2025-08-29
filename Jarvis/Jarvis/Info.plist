@@ -5,7 +5,7 @@
 	<key>CFBundleName</key>
 	<string>Jarvis</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.0.1</string>
+	<string>0.0.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>NSFaceIDUsageDescription</key>
@@ -25,9 +25,9 @@
 	</dict>
 	<key>AVInitialRouteSharingPolicy</key>
 	<string>LongFormAudio</string>
-    <key>NSMicrophoneUsageDescription</key>
-    <string>We need access to the microphone to convert your voice to text.</string>
-    <key>NSSpeechRecognitionUsageDescription</key>
-    <string>We need access to speech recognition for voice-to-text functionality.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>We need access to the microphone to convert your voice to text.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>We need access to speech recognition for voice-to-text functionality.</string>
 </dict>
 </plist>
