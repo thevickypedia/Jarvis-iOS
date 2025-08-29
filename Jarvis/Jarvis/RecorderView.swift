@@ -12,6 +12,9 @@ import AVFoundation
 struct RecorderView: View {
     @StateObject private var speechRecognizer = SpeechRecognizer()
     @EnvironmentObject var themeManager: ThemeManager
+    let serverURL: String
+    let password: String
+    let transitProtection: Bool
     let handleLogout: (_ clearActiveServers: Bool) -> Void
 
     var body: some View {
@@ -22,7 +25,7 @@ struct RecorderView: View {
                     .multilineTextAlignment(.center)
 
                 Button(action: {
-                    speechRecognizer.toggleRecording()
+                    speechRecognizer.toggleRecording(serverURL: serverURL, password: password, transitProtection: transitProtection)
                 }) {
                     Image(systemName: speechRecognizer.isRecording ? "mic.fill" : "mic.circle")
                         .resizable()

@@ -64,7 +64,59 @@ class SpeechRecognizer: ObservableObject {
         noSpeechTimer = nil
     }
 
-    func startRecording() {
+    func makeServerRequest(serverURL: String, password: String, transitProtection: Bool) {
+        guard let url = URL(string: "\(serverURL)/offline-communicator") else {
+            Log.error("Invalid URL")
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        let authHeader = transitProtection ? "\\u" + convertStringToHex(password) : password
+        request.setValue("Bearer \(authHeader)", forHTTPHeaderField: "Authorization")
+
+        let payload: [String: Any] = [
+            "command": self.recognizedText,
+            "native_audio": false,
+            "speech_timeout": 0
+        ]
+
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: payload, options: [])
+        } catch {
+            Log.error("Failed to encode JSON: \(error.localizedDescription)")
+            return
+        }
+
+        // Use URLSession dataTask with a completion handler
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                Log.error("Network error: \(error.localizedDescription)")
+                return
+            }
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                Log.error("Invalid response")
+                return
+            }
+
+            if httpResponse.statusCode == 200 {
+                if let data = data, let responseString = String(data: data, encoding: .utf8) {
+                    Log.info("📦 Server Response: \(responseString)")
+                    // TODO: Dispatch and display
+                } else {
+                    Log.info("📦 Empty response body or decoding failed.")
+                }
+            } else {
+                Log.error("❌ Server responded with status: \(httpResponse.statusCode)")
+            }
+        }.resume()
+    }
+
+    func startRecording(serverURL: String, password: String, transitProtection: Bool) {
         #if targetEnvironment(simulator)
         Log.error("Simulator can't use microphone input.")
         recognizedText = "Simulator can't record audio"
@@ -90,6 +142,7 @@ class SpeechRecognizer: ObservableObject {
                     DispatchQueue.main.async {
                         self.recognizedText = result.bestTranscription.formattedString
                         Log.info("Final recognized: \(self.recognizedText)")
+                        self.makeServerRequest(serverURL: serverURL, password: password, transitProtection: transitProtection)
                     }
                     self.stopRecording()
                 } else {
@@ -159,11 +212,11 @@ class SpeechRecognizer: ObservableObject {
         }
     }
 
-    func toggleRecording() {
+    func toggleRecording(serverURL: String, password: String, transitProtection: Bool) {
         if isRecording {
             stopRecording()
         } else {
-            startRecording()
+            startRecording(serverURL: serverURL, password: password, transitProtection: transitProtection)
         }
     }
 }
