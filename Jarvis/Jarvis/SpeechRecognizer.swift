@@ -19,6 +19,7 @@ class SpeechRecognizer: ObservableObject {
     private var request: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
     private var silenceTimer: Timer?
+    private var noSpeechTimer: Timer?
 
     func requestPermissions() {
         SFSpeechRecognizer.requestAuthorization { authStatus in
@@ -50,6 +51,19 @@ class SpeechRecognizer: ObservableObject {
         }
     }
 
+    private func startNoSpeechTimer() {
+        noSpeechTimer?.invalidate()
+        noSpeechTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: false) { [weak self] _ in
+            print("No speech detected. Auto-stopping.")
+            self?.stopRecording()
+        }
+    }
+
+    private func cancelNoSpeechTimer() {
+        noSpeechTimer?.invalidate()
+        noSpeechTimer = nil
+    }
+
     func startRecording() {
         #if targetEnvironment(simulator)
         print("Simulator can't use microphone input.")
@@ -78,7 +92,8 @@ class SpeechRecognizer: ObservableObject {
                 self.resetSilenceTimer()
             }
 
-            if error != nil || (result?.isFinal ?? false) {
+            if let error = error {
+                print("Recognition error: \(error.localizedDescription)")
                 self.stopRecording()
             }
         }
@@ -104,6 +119,7 @@ class SpeechRecognizer: ObservableObject {
             }
             audioEngine.prepare()
             try audioEngine.start()
+            self.startNoSpeechTimer()
 
             DispatchQueue.main.async {
                 self.isRecording = true
@@ -116,11 +132,15 @@ class SpeechRecognizer: ObservableObject {
     func stopRecording() {
         audioEngine.stop()
         audioEngine.inputNode.removeTap(onBus: 0)
-        recognitionTask?.cancel()
+
+        // Flush final result instead of killing early
+        recognitionTask?.finish()
         recognitionTask = nil
         request = nil
+
         silenceTimer?.invalidate()
         silenceTimer = nil
+        cancelNoSpeechTimer()
 
         DispatchQueue.main.async {
             self.isRecording = false
