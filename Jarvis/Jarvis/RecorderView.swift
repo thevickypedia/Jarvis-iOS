@@ -29,7 +29,7 @@ struct RecorderView: View {
                 }) {
                     Image(systemName: speechRecognizer.isRecording ? "mic.fill" : "mic.circle")
                         .resizable()
-                        .frame(width: 80, height: 80)
+                        .frame(width: speechRecognizer.isRecording ? 60 : 80, height: 80)
                         .foregroundColor(.blue)
                 }
             }
