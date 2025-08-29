@@ -8,10 +8,26 @@
 import SwiftUI
 import Speech
 import AVFoundation
+
+
+
 struct ContentView: View {
+    @State private var knownServers: [String] = []
+    @State private var showAddServerAlert = false
+    @State private var newServerURL = ""
+    @State private var serverURL = ""
+    @State private var password = ""
+    @AppStorage("useFaceID") private var useFaceID: Bool = false
+
+    @State private var isLoading = false
+    @State private var errorMessage: String?
+    @State private var isLoggedIn = false
+    @State private var showLogoutMessage = false
+    @State private var statusMessage: String?
+
     @StateObject private var speechRecognizer = SpeechRecognizer()
 
-    var body: some View {
+    var recordingPage: some View {
         VStack(spacing: 30) {
             Text(speechRecognizer.recognizedText)
                 .padding()
@@ -29,6 +45,296 @@ struct ContentView: View {
         .padding()
         .onAppear {
             speechRecognizer.requestPermissions()
+        }
+    }
+
+    var body: some View {
+        NavigationStack() {
+            Group {
+                if isLoggedIn {
+                    recordingPage
+                } else {
+                    loginView
+                }
+            }
+        }
+    }
+
+    // FIXME: loadSession is being called redundantly
+    var loginView: some View {
+        VStack(spacing: 20) {
+            Image("logo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 120, height: 120)
+                .padding(.bottom, 10)
+
+            Text("J.A.R.V.I.S")
+                .font(.largeTitle)
+                .bold()
+                .padding(.top, 1)
+
+            ServerURLMenu(
+                serverURL: $serverURL,
+                showAddServerAlert: $showAddServerAlert,
+                knownServers: knownServers,
+                newServerURL: $newServerURL,
+                addNewServer: addNewServer
+            ).padding(.top, 1)
+
+            if useFaceID,
+               let existingSession = KeychainHelper.loadSession(),
+               existingSession["serverURL"] == serverURL {
+                // Face ID mode with saved session
+                Toggle("Login with Face ID", isOn: $useFaceID)
+                    .padding(.top, 8)
+                Button(action: {
+                    biometricSignIn()
+                }) {
+                    let username = existingSession["username"]
+                    let labelText = (username?.isEmpty == false) ? "Login as \(username!)" : "Login with FaceID"
+                    Label(labelText, systemImage: "faceid")
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
+                        .font(.headline)
+                }
+                .padding(.top, 6)
+                Spacer().frame(height: 8)
+                Button(action: {
+                    KeychainHelper.deleteSession()
+                    useFaceID = false
+                }) {
+                    Label("Switch User", systemImage: "person.crop.circle.badge.checkmark")
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .background(.gray)
+                        .foregroundColor(.white)
+                        .cornerRadius(6)
+                        .font(.headline)
+                }
+                .padding(.top, 4)
+            } else {
+                // Normal credential-based login
+                SecureField("Password", text: $password)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+
+                Toggle("Use Face ID", isOn: $useFaceID)
+
+                Button(action: {
+                    Task {
+                        await login()
+                    }
+                }) {
+                    if isLoading { ProgressView() } else {
+                        // key.fill || person.badge.key.fill
+                        Label("Login", systemImage: "person.badge.key.fill")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
+                            .font(.headline)
+                    }
+                }
+                .disabled(isLoading)
+            }
+
+            if let statusMessage = statusMessage {
+                Text(statusMessage)
+                    .font(.caption)
+                    .foregroundColor(statusMessage.contains("Logout") ? .orange : .green)
+                    .padding()
+                    .transition(.opacity)
+            }
+        }
+        .padding()
+        .onAppear {
+            knownServers = KeychainHelper.loadKnownServers()
+            if let session = KeychainHelper.loadSession(), let lastLoggedInURL = session["serverURL"] {
+                serverURL = lastLoggedInURL
+            } else if !knownServers.isEmpty {
+                serverURL = knownServers.first ?? ""
+            }
+        }
+        .alert("Error", isPresented: .constant(errorMessage != nil), presenting: errorMessage) { _ in
+            Button("OK", role: .cancel) {
+                errorMessage = nil
+            }
+        } message: { error in
+            Text(error)
+        }
+    }
+
+    func addNewServer() {
+        // This should not happen since the button will not be visible (but just in case)
+        if knownServers.count == 5 {
+            errorMessage = "Server limit reached (5). Delete one to add a new server."
+            return
+        }
+        let trimmed = newServerURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed.hasPrefix("http") else {
+            if !trimmed.isEmpty { errorMessage = "Invalid URL: \(trimmed)" }
+            return
+        }
+
+        if !knownServers.contains(trimmed) {
+            knownServers.insert(trimmed, at: 0)
+            KeychainHelper.saveKnownServers(knownServers)
+        }
+
+        serverURL = trimmed
+        newServerURL = ""
+        // Reset all auth state for better security
+        password = ""
+        useFaceID = false
+    }
+
+    func handleLogout(_ clearActiveServers: Bool = false) {
+
+        isLoggedIn = false
+        statusMessage = "⚠️ Logout successful!"
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+            statusMessage = nil
+        }
+        // If neither remember nor useFaceID is enabled, remove any saved session
+        if !useFaceID {
+            KeychainHelper.deleteSession()
+            KeychainHelper.deleteKnownServers()
+        }
+        // This is a temporary solution
+        // Clears current serverURL and knownServers immediately
+        if clearActiveServers {
+            knownServers.removeAll()
+            serverURL = ""
+        }
+    }
+
+    func convertStringToHex(_ str: String) -> String {
+        return str.unicodeScalars.map {
+            let hex = String($0.value, radix: 16)
+            return String(repeating: "0", count: 4 - hex.count) + hex
+        }.joined(separator: "\\u")
+    }
+
+    func login() async {
+        if serverURL.isEmpty || password.isEmpty {
+            errorMessage = "Credentials are required to login!"
+            return
+        }
+        isLoading = true
+        errorMessage = nil
+
+        if serverURL.hasSuffix("/") {
+            serverURL.removeLast()
+        }
+
+        guard let url = URL(string: "\(serverURL)/offline-communicator") else {
+            errorMessage = "Invalid URL"
+            isLoading = false
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        // Add Authorization header
+        request.setValue("Bearer \(password)", forHTTPHeaderField: "Authorization")
+
+        // Construct the JSON body with a test message to validate auth
+        let payload: [String: Any] = [
+            "command": "test",
+            "native_audio": false,
+            "speech_timeout": 0
+        ]
+
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: payload, options: [])
+        } catch {
+            errorMessage = "Failed to encode JSON body"
+            isLoading = false
+            return
+        }
+
+        do {
+            let (_, response) = try await URLSession.shared.data(for: request)
+            isLoading = false
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                errorMessage = "Invalid response"
+                return
+            }
+
+            if httpResponse.statusCode == 200 {
+                isLoggedIn = true
+                statusMessage = "✅ Login successful!"
+                if useFaceID {
+                    KeychainHelper.saveSession(
+                        serverURL: serverURL,
+                        password: password
+                    )
+                } else {
+                    // ensure any existing saved session is removed when the user opts out
+                    KeychainHelper.deleteSession()
+                    KeychainHelper.deleteKnownServers()
+                }
+            } else {
+                errorMessage = "Request failed: \(httpResponse.statusCode)"
+            }
+        } catch {
+            isLoading = false
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func reauth() {
+        if let session = KeychainHelper.loadSession(),
+           let savedServerURL = session["serverURL"],
+           let savedPassword = session["password"],
+           savedServerURL == self.serverURL {
+            DispatchQueue.main.async {
+                self.serverURL = savedServerURL
+                self.password = savedPassword
+                // Reuse the normal login flow
+                Task {
+                    await login()
+                }
+            }
+        } else {
+            DispatchQueue.main.async {
+                useFaceID = false // fallback to manual login
+            }
+        }
+    }
+
+    func biometricSignIn() {
+        // Force remembering username whenever FaceID is toggled
+        KeychainHelper.authenticateWithBiometrics { success in
+            Task {
+                guard success,
+                      let session = KeychainHelper.loadSession(),
+                      let serverURL = session["serverURL"],
+                      self.serverURL == self.serverURL
+                else {
+                    DispatchQueue.main.async {
+                        useFaceID = false // fallback to manual login
+                    }
+                    return
+                }
+                // TODO: Add a server handshake call
+                DispatchQueue.main.async {
+                    isLoggedIn = true
+                    statusMessage = "✅ Face ID login successful!"
+                }
+                print("✅ Face ID login successful")
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    statusMessage = nil
+                }
+            }
         }
     }
 }
