@@ -64,6 +64,21 @@ class SpeechRecognizer: ObservableObject {
         noSpeechTimer = nil
     }
 
+    func parseServerResponse(data: Data?) -> String {
+        if let data = data {
+            do {
+                let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+                return (json?["detail"] as? String) ?? {
+                    String(data: data, encoding: .utf8) ?? "❌ Unable to decode response."
+                }()
+            } catch {
+                return String(data: data, encoding: .utf8) ?? "❌ JSON parsing failed and response is undecodable."
+            }
+        } else {
+            return "❌ Empty response body."
+        }
+    }
+
     func makeServerRequestSync(
         serverURL: String,
         password: String,
@@ -112,11 +127,7 @@ class SpeechRecognizer: ObservableObject {
 
             if httpResponse.statusCode == 200 {
                 Log.debug("✅ Server request successful")
-                if let data = data, let responseString = String(data: data, encoding: .utf8) {
-                    result = responseString
-                } else {
-                    result = "❌ Empty response body or decoding failed."
-                }
+                result = self.parseServerResponse(data: data)
             } else {
                 result = "❌ Server response: [\(httpResponse.statusCode)]: \(HTTPURLResponse.localizedString(forStatusCode: httpResponse.statusCode))"
             }
