@@ -17,6 +17,7 @@ struct ContentView: View {
     @State private var password = ""
     @AppStorage("useFaceID") private var useFaceID: Bool = false
     @EnvironmentObject var themeManager: ThemeManager
+    @AppStorage("transitProtection") private var transitProtection = false
 
     @State private var isLoading = false
     @State private var errorMessage: String?
@@ -126,6 +127,8 @@ struct ContentView: View {
                 // Face ID mode with saved session
                 Toggle("Login with Face ID", isOn: $useFaceID)
                     .padding(.top, 8)
+                Toggle("Transit Protection", isOn: $transitProtection)
+
                 Button(action: {
                     biometricSignIn()
                 }) {
@@ -160,6 +163,7 @@ struct ContentView: View {
                     .textFieldStyle(RoundedBorderTextFieldStyle())
 
                 Toggle("Use Face ID", isOn: $useFaceID)
+                Toggle("Transit Protection", isOn: $transitProtection)
 
                 Button(action: {
                     Task {
@@ -317,8 +321,11 @@ struct ContentView: View {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
+        // condition ? valueIfTrue : valueIfFalse
+        let authHeader = transitProtection ? "\\u" + convertStringToHex(password) : password
+
         // Add Authorization header
-        request.setValue("Bearer \(password)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(authHeader)", forHTTPHeaderField: "Authorization")
 
         // Construct the JSON body with a test message to validate auth
         let payload: [String: Any] = [
