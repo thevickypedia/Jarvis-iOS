@@ -1,6 +1,6 @@
 //
 //  Log.swift
-//  FileBrowserClient
+//  Jarvis
 //
 //  Created by Vignesh Rao on 7/22/25.
 //
