@@ -83,9 +83,20 @@ class SpeechRecognizer: ObservableObject {
             guard let self = self else { return }
 
             if let result = result {
-                DispatchQueue.main.async {
-                    self.recognizedText = result.bestTranscription.formattedString
-                    print("Recognized: \(self.recognizedText)")
+                if !result.bestTranscription.formattedString.isEmpty {
+                    self.cancelNoSpeechTimer()
+                }
+                if result.isFinal {
+                    DispatchQueue.main.async {
+                        self.recognizedText = result.bestTranscription.formattedString
+                        print("Final recognized: \(self.recognizedText)")
+                    }
+                    self.stopRecording()
+                } else {
+                    DispatchQueue.main.async {
+                        self.recognizedText = result.bestTranscription.formattedString
+                        print("Partial: \(result.bestTranscription.formattedString)")
+                    }
                 }
 
                 // Reset silence timer every time speech is detected
