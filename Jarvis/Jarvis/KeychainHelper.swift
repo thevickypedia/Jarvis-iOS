@@ -49,7 +49,7 @@ enum KeychainHelper {
     }
 
     static func deleteSession() {
-        print("Deleting session information from keychain")
+        Log.info("Deleting session information from keychain")
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrAccount as String: key
@@ -87,7 +87,7 @@ enum KeychainHelper {
         // Add the new data to the keychain
         let status = SecItemAdd(query as CFDictionary, nil)
         guard status == errSecSuccess else {
-            print("Failed to save known servers: \(status)")
+            Log.error("Failed to save known servers: \(status)")
             return
         }
     }

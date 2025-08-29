@@ -24,20 +24,20 @@ class SpeechRecognizer: ObservableObject {
     func requestPermissions() {
         SFSpeechRecognizer.requestAuthorization { authStatus in
             if authStatus != .authorized {
-                print("Speech recognition not authorized")
+                Log.error("Speech recognition not authorized")
             }
         }
 
         if #available(iOS 17.0, *) {
             AVAudioApplication.requestRecordPermission { granted in
                 if !granted {
-                    print("Microphone access denied")
+                    Log.error("Microphone access denied")
                 }
             }
         } else {
             AVAudioSession.sharedInstance().requestRecordPermission { granted in
                 if !granted {
-                    print("Microphone access denied")
+                    Log.error("Microphone access denied")
                 }
             }
         }
@@ -46,7 +46,7 @@ class SpeechRecognizer: ObservableObject {
     private func resetSilenceTimer() {
         silenceTimer?.invalidate()
         silenceTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: false) { [weak self] _ in
-            print("Silence detected, stopping...")
+            Log.info("Silence detected, stopping...")
             self?.stopRecording()
         }
     }
@@ -54,7 +54,7 @@ class SpeechRecognizer: ObservableObject {
     private func startNoSpeechTimer() {
         noSpeechTimer?.invalidate()
         noSpeechTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: false) { [weak self] _ in
-            print("No speech detected. Auto-stopping.")
+            Log.info("No speech detected. Auto-stopping.")
             self?.stopRecording()
         }
     }
@@ -66,7 +66,7 @@ class SpeechRecognizer: ObservableObject {
 
     func startRecording() {
         #if targetEnvironment(simulator)
-        print("Simulator can't use microphone input.")
+        Log.error("Simulator can't use microphone input.")
         recognizedText = "Simulator can't record audio"
         return
         #endif
@@ -89,13 +89,13 @@ class SpeechRecognizer: ObservableObject {
                 if result.isFinal {
                     DispatchQueue.main.async {
                         self.recognizedText = result.bestTranscription.formattedString
-                        print("Final recognized: \(self.recognizedText)")
+                        Log.info("Final recognized: \(self.recognizedText)")
                     }
                     self.stopRecording()
                 } else {
                     DispatchQueue.main.async {
                         self.recognizedText = result.bestTranscription.formattedString
-                        print("Partial: \(result.bestTranscription.formattedString)")
+                        Log.debug("Partial: \(result.bestTranscription.formattedString)")
                     }
                 }
 
@@ -104,7 +104,7 @@ class SpeechRecognizer: ObservableObject {
             }
 
             if let error = error {
-                print("Recognition error: \(error.localizedDescription)")
+                Log.error("Recognition error: \(error.localizedDescription)")
                 self.stopRecording()
             }
         }
@@ -117,10 +117,10 @@ class SpeechRecognizer: ObservableObject {
 
             // STEP 2: NOW fetch input format (will be valid)
             let format = node.inputFormat(forBus: 0)
-            print("Input Format: sampleRate = \(format.sampleRate), channels = \(format.channelCount)")
+            Log.info("Input Format: sampleRate = \(format.sampleRate), channels = \(format.channelCount)")
 
             guard format.sampleRate > 0, format.channelCount > 0 else {
-                print("Invalid input format. Cannot start recording.")
+                Log.error("Invalid input format. Cannot start recording.")
                 return
             }
 
@@ -136,7 +136,7 @@ class SpeechRecognizer: ObservableObject {
                 self.isRecording = true
             }
         } catch {
-            print("Audio engine error: \(error.localizedDescription)")
+            Log.error("Audio engine error: \(error.localizedDescription)")
         }
     }
 
