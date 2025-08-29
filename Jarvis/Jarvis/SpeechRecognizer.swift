@@ -198,24 +198,28 @@ class SpeechRecognizer: ObservableObject {
                         self.cancelNoSpeechTimer()
                     }
                     if result.isFinal {
-                        self.stopRecording(true)
                         self.recognizedText = "Processing..."
+                        self.stopRecording(true)
                         let command = result.bestTranscription.formattedString
                         Log.info("Server request: \(command)")
-                        let response = self.makeServerRequestSync(
-                            serverURL: serverURL,
-                            password: password,
-                            transitProtection: transitProtection,
-                            command: command
-                        )
-                        Log.info("Server response: \(response)")
-                        self.recognizedText = response
+                        DispatchQueue.global(qos: .userInitiated).async {
+                            let response = self.makeServerRequestSync(
+                                serverURL: serverURL,
+                                password: password,
+                                transitProtection: transitProtection,
+                                command: command
+                            )
+                            Log.info("Server response: \(response)")
+                            DispatchQueue.main.async {
+                                self.recognizedText = response
+                            }
+                        }
                     } else {
                         DispatchQueue.main.async {
                             self.recognizedText = result.bestTranscription.formattedString
                             Log.debug("Partial: \(result.bestTranscription.formattedString)")
                         }
-                    // Only reset silence timer if listener is still active
+                        // Only reset silence timer if listener is still active
                         self.resetSilenceTimer()
                     }
                 }
