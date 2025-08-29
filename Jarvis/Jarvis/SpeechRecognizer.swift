@@ -64,10 +64,14 @@ class SpeechRecognizer: ObservableObject {
         noSpeechTimer = nil
     }
 
-    func makeServerRequest(serverURL: String, password: String, transitProtection: Bool, command: String) {
+    func makeServerRequestSync(
+        serverURL: String,
+        password: String,
+        transitProtection: Bool,
+        command: String
+    ) -> String {
         guard let url = URL(string: "\(serverURL)/offline-communicator") else {
-            Log.error("Invalid URL")
-            return
+            return "❌ Invalid URL"
         }
 
         var request = URLRequest(url: url)
@@ -87,35 +91,43 @@ class SpeechRecognizer: ObservableObject {
         do {
             request.httpBody = try JSONSerialization.data(withJSONObject: payload, options: [])
         } catch {
-            Log.error("Failed to encode JSON: \(error.localizedDescription)")
-            return
+            return "❌ Failed to encode JSON: \(error.localizedDescription)"
         }
 
-        // Use URLSession dataTask with a completion handler
+        var result = "❌ Request timed out after 5 seconds"
+        let semaphore = DispatchSemaphore(value: 0)
+
         URLSession.shared.dataTask(with: request) { data, response, error in
+            defer { semaphore.signal() }
+
             if let error = error {
-                Log.error("Network error: \(error.localizedDescription)")
+                result = "❌ Network error: \(error.localizedDescription)"
                 return
             }
 
             guard let httpResponse = response as? HTTPURLResponse else {
-                Log.error("Invalid response")
+                result = "❌ Invalid response"
                 return
             }
 
             if httpResponse.statusCode == 200 {
+                Log.debug("✅ Server request successful")
                 if let data = data, let responseString = String(data: data, encoding: .utf8) {
-                    Log.info("📦 Server Response: \(responseString)")
-                    DispatchQueue.main.async {
-                        self.recognizedText = responseString
-                    }
+                    result = responseString
                 } else {
-                    Log.info("📦 Empty response body or decoding failed.")
+                    result = "❌ Empty response body or decoding failed."
                 }
             } else {
-                Log.error("❌ Server responded with status: \(httpResponse.statusCode)")
+                result = "❌ Server response: [\(httpResponse.statusCode)]: \(HTTPURLResponse.localizedString(forStatusCode: httpResponse.statusCode))"
             }
         }.resume()
+
+        // ⏱ Block for up to 5 seconds
+        let timeoutResult = semaphore.wait(timeout: .now() + 5)
+        if timeoutResult == .timedOut {
+            result = "❌ Request timed out after 5 seconds"
+        }
+        return result
     }
 
     func startRecording(serverURL: String, password: String, transitProtection: Bool) {
@@ -141,27 +153,26 @@ class SpeechRecognizer: ObservableObject {
                     self.cancelNoSpeechTimer()
                 }
                 if result.isFinal {
-                    // TODO: Remove all dispatch and make this blocking call with a timeout
-                    DispatchQueue.main.async {
-                        self.recognizedText = "Processing..."
-                        Log.info("Final recognized: \(self.recognizedText)")
-                        self.makeServerRequest(
-                            serverURL: serverURL,
-                            password: password,
-                            transitProtection: transitProtection,
-                            command: result.bestTranscription.formattedString
-                        )
-                    }
                     self.stopRecording(true)
+                    self.recognizedText = "Processing..."
+                    let command = result.bestTranscription.formattedString
+                    Log.info("Final recognized: \(command)")
+                    let response = self.makeServerRequestSync(
+                        serverURL: serverURL,
+                        password: password,
+                        transitProtection: transitProtection,
+                        command: command
+                    )
+                    Log.debug("Server response: \(response)")
+                    self.recognizedText = response
                 } else {
                     DispatchQueue.main.async {
                         self.recognizedText = result.bestTranscription.formattedString
                         Log.debug("Partial: \(result.bestTranscription.formattedString)")
                     }
+                    // Only reset silence timer if listener is still active
+                    self.resetSilenceTimer()
                 }
-
-                // Reset silence timer every time speech is detected
-                self.resetSilenceTimer()
             }
 
             if let error = error {
@@ -216,10 +227,7 @@ class SpeechRecognizer: ObservableObject {
 
         DispatchQueue.main.async {
             self.isRecording = false
-        }
-
-        if !isProcessing {
-            DispatchQueue.main.async {
+            if !isProcessing {
                 self.recognizedText = "Tap the mic to speak..."
             }
         }
