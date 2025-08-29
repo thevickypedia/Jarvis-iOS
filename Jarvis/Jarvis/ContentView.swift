@@ -8,17 +8,15 @@
 import SwiftUI
 import Speech
 import AVFoundation
-import SwiftUI
-
 struct ContentView: View {
     @StateObject private var speechRecognizer = SpeechRecognizer()
-    
+
     var body: some View {
         VStack(spacing: 30) {
             Text(speechRecognizer.recognizedText)
                 .padding()
                 .multilineTextAlignment(.center)
-            
+
             Button(action: {
                 speechRecognizer.toggleRecording()
             }) {
