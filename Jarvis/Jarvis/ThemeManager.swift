@@ -5,7 +5,6 @@
 //  Created by Vignesh Rao on 8/28/25.
 //
 
-
 import SwiftUI
 
 class ThemeManager: ObservableObject {

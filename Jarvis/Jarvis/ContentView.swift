@@ -9,7 +9,6 @@ import SwiftUI
 import Speech
 import AVFoundation
 
-
 struct ContentView: View {
     @State private var knownServers: [String] = []
     @State private var showAddServerAlert = false
@@ -49,7 +48,7 @@ struct ContentView: View {
     }
 
     var body: some View {
-        NavigationStack() {
+        NavigationStack {
             Group {
                 if isLoggedIn {
                     recordingPage
