@@ -285,18 +285,20 @@ struct ContentView: View {
     }
 
     func convertStringToHex(_ str: String) -> String {
+        Log.info("🔐 Converting token to hex")
         return str.unicodeScalars.map {
             let hex = String($0.value, radix: 16)
             return String(repeating: "0", count: 4 - hex.count) + hex
         }.joined(separator: "\\u")
     }
 
-    func login() async {
+    func login() async -> Bool {
         if serverURL.isEmpty || password.isEmpty {
             Log.error("Missing credentials. URL: \(serverURL), Password Empty: \(password.isEmpty)")
             errorMessage = "Credentials are required to login!"
-            return
+            return false
         }
+
         isLoading = true
         errorMessage = nil
 
@@ -307,7 +309,7 @@ struct ContentView: View {
         guard let url = URL(string: "\(serverURL)/offline-communicator") else {
             errorMessage = "Invalid URL"
             isLoading = false
-            return
+            return false
         }
 
         var request = URLRequest(url: url)
@@ -330,7 +332,7 @@ struct ContentView: View {
         } catch {
             errorMessage = "Failed to encode JSON body"
             isLoading = false
-            return
+            return false
         }
 
         do {
@@ -339,7 +341,7 @@ struct ContentView: View {
 
             guard let httpResponse = response as? HTTPURLResponse else {
                 errorMessage = "Invalid response"
-                return
+                return false
             }
 
             if httpResponse.statusCode == 200 {
@@ -347,41 +349,21 @@ struct ContentView: View {
                 statusMessage = "✅ Login successful!"
                 Log.info("✅ Login successful!")
                 if useFaceID {
-                    KeychainHelper.saveSession(
-                        serverURL: serverURL,
-                        password: password
-                    )
+                    KeychainHelper.saveSession(serverURL: serverURL, password: password)
                 } else {
                     // ensure any existing saved session is removed when the user opts out
                     KeychainHelper.deleteSession()
                     KeychainHelper.deleteKnownServers()
                 }
+                return true
             } else {
                 errorMessage = "Request failed: \(httpResponse.statusCode)"
+                return false
             }
         } catch {
             isLoading = false
             errorMessage = error.localizedDescription
-        }
-    }
-
-    func reauth() {
-        if let session = KeychainHelper.loadSession(),
-           let savedServerURL = session["serverURL"],
-           let savedPassword = session["password"],
-           savedServerURL == self.serverURL {
-            DispatchQueue.main.async {
-                self.serverURL = savedServerURL
-                self.password = savedPassword
-                // Reuse the normal login flow
-                Task {
-                    await login()
-                }
-            }
-        } else {
-            DispatchQueue.main.async {
-                useFaceID = false // fallback to manual login
-            }
+            return false
         }
     }
 
@@ -389,7 +371,7 @@ struct ContentView: View {
         Log.info("🔐 Starting biometric authentication")
         KeychainHelper.authenticateWithBiometrics { success in
             Log.info("🔐 Biometric auth completed: \(success)")
-            
+
             guard success,
                   let session = KeychainHelper.loadSession(),
                   let serverURL = session["serverURL"],
@@ -408,16 +390,19 @@ struct ContentView: View {
 
             Task {
                 Log.info("🔁 Initiating server handshake")
-                await login()
+                let loginSuccess = await login()
                 Log.info("✅ Finished login")
 
                 DispatchQueue.main.async {
-                    isLoggedIn = true
-                    statusMessage = "✅ Face ID login successful!"
-                }
-
-                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                    statusMessage = nil
+                    if loginSuccess {
+                        isLoggedIn = true
+                        statusMessage = "✅ Face ID login successful!"
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                            statusMessage = nil
+                        }
+                    } else {
+                        useFaceID = false
+                    }
                 }
             }
         }
