@@ -114,7 +114,7 @@ class SpeechRecognizer: ObservableObject {
             player?.play()
 
             // ✅ Block until audio finishes playing
-            while let p = player, p.isPlaying {
+            while let playerLocal = player, playerLocal.isPlaying {
                 RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.1))
             }
             Log.debug("✅ Audio finished playing.")
@@ -176,7 +176,7 @@ class SpeechRecognizer: ObservableObject {
             return
         }
 
-        var result = "❌ Request timed out after 5 seconds"
+        var result = "❌ Request timed out after \(advancedSettings.requestTimeout) seconds"
         let semaphore = DispatchSemaphore(value: 0)
 
         URLSession.shared.dataTask(with: request) { data, response, error in
@@ -205,12 +205,9 @@ class SpeechRecognizer: ObservableObject {
             }
         }.resume()
 
-        let delay: DispatchTimeInterval = (
-            advancedSettings.nativeAudio || advancedSettings.speechTimeout != 0
-        ) ? .seconds(30) : .seconds(5)
-        let timeoutResult = semaphore.wait(timeout: .now() + delay)
+        let timeoutResult = semaphore.wait(timeout: .now() + .seconds(advancedSettings.requestTimeout))
         if timeoutResult == .timedOut {
-            result = "❌ Request timed out after 5 seconds"
+            result = "❌ Request timed out after \(advancedSettings.requestTimeout) seconds"
         }
 
         updateRecognizedText(result)

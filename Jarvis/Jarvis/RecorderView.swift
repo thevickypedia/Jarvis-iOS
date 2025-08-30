@@ -9,6 +9,12 @@ import SwiftUI
 import Speech
 import AVFoundation
 
+struct AdvancedSettings {
+    let nativeAudio: Bool
+    let speechTimeout: Int
+    let requestTimeout: Int
+}
+
 struct RecorderView: View {
     @StateObject private var speechRecognizer = SpeechRecognizer()
     @EnvironmentObject var themeManager: ThemeManager
@@ -16,7 +22,13 @@ struct RecorderView: View {
     let password: String
     let transitProtection: Bool
     let handleLogout: (_ clearActiveServers: Bool) -> Void
-    let advancedSettings: AdvancedSettings
+
+    @AppStorage("nativeAudio") private var nativeAudio = false
+    @AppStorage("speechTimeout") private var speechTimeout = 0
+    @AppStorage("requestTimeout") private var requestTimeout = 5
+
+    let speechTimeoutRange = Array(0..<30)
+    let requestTimeoutRange = Array(0..<60)
 
     var body: some View {
         ZStack {
@@ -30,13 +42,55 @@ struct RecorderView: View {
                         serverURL: serverURL,
                         password: password,
                         transitProtection: transitProtection,
-                        advancedSettings: advancedSettings
+                        advancedSettings: AdvancedSettings(
+                            nativeAudio: nativeAudio,
+                            speechTimeout: speechTimeout,
+                            requestTimeout: requestTimeout
+                        )
                     )
                 }) {
                     Image(systemName: speechRecognizer.isRecording ? "mic.fill" : "mic.circle")
                         .resizable()
                         .frame(width: speechRecognizer.isRecording ? 60 : 80, height: 80)
                         .foregroundColor(.blue)
+                }
+                Toggle("Native Audio", isOn: $nativeAudio)
+                    .disabled(speechRecognizer.isRecording)
+                    .onChange(of: nativeAudio) { _, newValue in
+                        // MARK: If nativeAudio is true, force speechTimeout to 0
+                        if newValue {
+                            speechTimeout = 0
+                        }
+                    }
+                HStack {
+                    Text("Speech Timeout (Seconds)")
+                    Spacer()
+                    Picker("", selection: $speechTimeout) {
+                        ForEach(speechTimeoutRange, id: \.self) {
+                            Text("\($0)").tag($0)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                    .frame(width: 80)
+                    .disabled(speechRecognizer.isRecording)
+                    .onChange(of: speechTimeout) { _, newValue in
+                        // MARK: If speechTimeout has a value, force nativeAudio to false
+                        if newValue > 0 {
+                            nativeAudio = false
+                        }
+                    }
+                }
+                HStack {
+                    Text("Request Timeout (Seconds)")
+                    Spacer()
+                    Picker("", selection: $requestTimeout) {
+                        ForEach(requestTimeoutRange, id: \.self) {
+                            Text("\($0)").tag($0)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                    .frame(width: 80)
+                    .disabled(speechRecognizer.isRecording)
                 }
             }
             .padding()
