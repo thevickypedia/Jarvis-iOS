@@ -63,50 +63,53 @@ struct RecorderView: View {
                         .foregroundColor(.blue)
                 }
 
-                Toggle("Native Audio", isOn: $nativeAudio)
-                    .disabled(speechRecognizer.isRecording)
-                    .foregroundColor(speechRecognizer.isRecording ? .gray : .primary) // Gray out when recording
-                    .onChange(of: nativeAudio) { _, newValue in
-                        // MARK: If nativeAudio is true, force speechTimeout to 0
-                        if newValue && speechTimeout != 0 {
-                            setStatusMessage("⚠️ Disabled speech timeout!")
-                            speechTimeout = 0
+                DisclosureGroup("Server Settings") {
+                    Toggle("Native Audio", isOn: $nativeAudio)
+                        .disabled(speechRecognizer.isRecording)
+                        .foregroundColor(speechRecognizer.isRecording ? .gray : .primary)
+                        .onChange(of: nativeAudio) { _, newValue in
+                            // MARK: If nativeAudio is true, force speechTimeout to 0
+                            if newValue && speechTimeout != 0 {
+                                setStatusMessage("⚠️ Disabled speech synthesis!")
+                                speechTimeout = 0
+                            }
+                        }
+                    
+                    // Speech Synthesis Timeout
+                    HStack {
+                        Text("Speech Synthesis Timeout (Seconds)")
+                            .foregroundColor(speechRecognizer.isRecording ? .gray : .primary)
+                        Spacer()
+                        Picker("", selection: $speechTimeout) {
+                            ForEach(speechTimeoutRange, id: \.self) {
+                                Text("\($0)").tag($0)
+                            }
+                        }
+                        .pickerStyle(MenuPickerStyle())
+                        .frame(width: 80)
+                        .disabled(speechRecognizer.isRecording)
+                        .onChange(of: speechTimeout) { _, newValue in
+                            // MARK: If speechTimeout has a value, force nativeAudio to false
+                            if newValue > 0 && nativeAudio {
+                                setStatusMessage("⚠️ Disabled native audio!")
+                                nativeAudio = false
+                            }
                         }
                     }
-
-                HStack {
-                    Text("Speech Timeout (Seconds)")
-                        .foregroundColor(speechRecognizer.isRecording ? .gray : .primary) // Gray out when recording
-                    Spacer()
-                    Picker("", selection: $speechTimeout) {
-                        ForEach(speechTimeoutRange, id: \.self) {
-                            Text("\($0)").tag($0)
+                    
+                    HStack {
+                        Text("Request Timeout (Seconds)")
+                            .foregroundColor(speechRecognizer.isRecording ? .gray : .primary)
+                        Spacer()
+                        Picker("", selection: $requestTimeout) {
+                            ForEach(requestTimeoutRange, id: \.self) {
+                                Text("\($0)").tag($0)
+                            }
                         }
+                        .pickerStyle(MenuPickerStyle())
+                        .frame(width: 80)
+                        .disabled(speechRecognizer.isRecording)
                     }
-                    .pickerStyle(MenuPickerStyle())
-                    .frame(width: 80)
-                    .disabled(speechRecognizer.isRecording)
-                    .onChange(of: speechTimeout) { _, newValue in
-                        // MARK: If speechTimeout has a value, force nativeAudio to false
-                        if newValue > 0 && nativeAudio {
-                            setStatusMessage("⚠️ Disabled native audio!")
-                            nativeAudio = false
-                        }
-                    }
-                }
-
-                HStack {
-                    Text("Request Timeout (Seconds)")
-                        .foregroundColor(speechRecognizer.isRecording ? .gray : .primary) // Gray out when recording
-                    Spacer()
-                    Picker("", selection: $requestTimeout) {
-                        ForEach(requestTimeoutRange, id: \.self) {
-                            Text("\($0)").tag($0)
-                        }
-                    }
-                    .pickerStyle(MenuPickerStyle())
-                    .frame(width: 80)
-                    .disabled(speechRecognizer.isRecording)
                 }
             }
             .padding()
