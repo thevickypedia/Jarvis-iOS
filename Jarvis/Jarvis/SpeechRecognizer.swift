@@ -70,17 +70,67 @@ class SpeechRecognizer: ObservableObject {
         noSpeechTimer = nil
     }
 
-    func parseServerResponse(data: Data?) -> String {
-        if let data = data {
-            do {
-                let decoded = try JSONDecoder().decode(ServerResponse.self, from: data)
-                return decoded.detail
-            } catch {
-                return String(data: data, encoding: .utf8) ?? "❌ JSON parsing failed and response is undecodable."
-            }
-        } else {
+    func parseTextResponse(data: Data?) -> String {
+        guard let textData = data else {
             return "❌ Empty response body."
         }
+        do {
+            let decoded = try JSONDecoder().decode(ServerResponse.self, from: textData)
+            return decoded.detail
+        } catch {
+            return String(data: textData, encoding: .utf8) ?? "❌ JSON parsing failed and response is undecodable."
+        }
+    }
+
+    func parseAudioResponse(data: Data?) -> String {
+        guard let audioData = data else {
+            return "❌ Empty response body."
+        }
+        var result = ""
+        let fileManager = FileManager.default
+        let tempDirectory = fileManager.temporaryDirectory
+        let audioFileURL = tempDirectory.appendingPathComponent("speech_file.wav")
+
+        do {
+            // Debugging: Ensure the file is saved
+            try audioData.write(to: audioFileURL)
+            Log.debug("✅ Audio file saved to \(audioFileURL)")
+
+            // Ensure the file exists
+            if fileManager.fileExists(atPath: audioFileURL.path) {
+                Log.debug("✅ Audio file exists: \(audioFileURL.path)")
+            } else {
+                Log.debug("❌ Audio file does not exist.")
+            }
+
+            // Set up the audio session to allow playback
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: .mixWithOthers)
+            try AVAudioSession.sharedInstance().setActive(true)
+
+            // Keep player as a class-level variable to avoid it being deallocated
+            var player: AVAudioPlayer?
+            player = try AVAudioPlayer(contentsOf: audioFileURL)
+            player?.volume = 1.0 // Max volume (0.0 to 1.0)
+            player?.play()
+
+            // ✅ Block until audio finishes playing
+            while let p = player, p.isPlaying {
+                RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.1))
+            }
+            Log.debug("✅ Audio finished playing.")
+
+            // Clean up file
+            do {
+                try fileManager.removeItem(at: audioFileURL)
+                Log.debug("✅ Audio file deleted after playback.")
+            } catch {
+                Log.debug("❌ Failed to delete audio file: \(error.localizedDescription)")
+            }
+            result = "✅ Played and deleted audio file"
+        } catch {
+            result = "❌ Audio error: \(error.localizedDescription)"
+        }
+        return result
     }
 
     func makeServerRequestSync(
@@ -101,9 +151,10 @@ class SpeechRecognizer: ObservableObject {
         let authHeader = transitProtection ? "\\u" + convertStringToHex(password) : password
         request.setValue("Bearer \(authHeader)", forHTTPHeaderField: "Authorization")
 
+        // TODO: Set these args via advancedSettings
         let payload: [String: Any] = [
             "command": command,
-            "native_audio": false,
+            "native_audio": true,
             "speech_timeout": 0
         ]
 
@@ -131,17 +182,24 @@ class SpeechRecognizer: ObservableObject {
 
             if httpResponse.statusCode == 200 {
                 Log.debug("✅ Server request successful")
-                result = self.parseServerResponse(data: data)
+                let contentType = httpResponse.value(forHTTPHeaderField: "Content-Type") ?? "NO MATCH"
+                if contentType == "application/octet-stream", let data = data {
+                    result = self.parseAudioResponse(data: data)
+                } else {
+                    result = self.parseTextResponse(data: data)
+                }
             } else {
                 result = "❌ Server response: [\(httpResponse.statusCode)]: \(HTTPURLResponse.localizedString(forStatusCode: httpResponse.statusCode))"
             }
         }.resume()
 
         // ⏱ Block for up to 5 seconds
-        let timeoutResult = semaphore.wait(timeout: .now() + 5)
+        // TODO: Set delay based on request payload (native_audio || speech_timeout)
+        let timeoutResult = semaphore.wait(timeout: .now() + 50)
         if timeoutResult == .timedOut {
             result = "❌ Request timed out after 5 seconds"
         }
+
         return result
     }
 
@@ -209,9 +267,10 @@ class SpeechRecognizer: ObservableObject {
                                 transitProtection: transitProtection,
                                 command: command
                             )
+                            // TODO: Move display logic to `makeServerRequestSync`
                             Log.info("Server response: \(response)")
-                            DispatchQueue.main.async {
-                                self.recognizedText = response
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 7) {
+                                self.recognizedText = "Tap the mic to speak..."
                             }
                         }
                     } else {

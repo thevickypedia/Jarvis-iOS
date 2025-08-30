@@ -305,8 +305,6 @@ struct ContentView: View {
     func biometricSignIn() {
         Log.info("🔐 Starting biometric authentication")
         KeychainHelper.authenticateWithBiometrics { success in
-            Log.info("🔐 Biometric auth completed: \(success)")
-
             guard success,
                   let session = KeychainHelper.loadSession(),
                   let serverURL = session["serverURL"],
@@ -326,7 +324,6 @@ struct ContentView: View {
             Task {
                 Log.info("🔁 Initiating server handshake")
                 let loginSuccess = await login()
-                Log.info("✅ Finished login")
 
                 DispatchQueue.main.async {
                     if loginSuccess {
