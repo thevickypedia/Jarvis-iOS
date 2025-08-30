@@ -133,6 +133,12 @@ struct RecorderView: View {
                             .disabled(speechRecognizer.isRecording)
                             .frame(width: 80)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .onChange(of: pauseThreshold) { oldValue, newValue in
+                                if newValue < 1 {
+                                    viewError = "Pause threshold cannot be less than 1s"
+                                    pauseThreshold = oldValue
+                                }
+                            }
                     }
 
                     // Seconds of non-speaking audio to keep on both sides of the recording
@@ -145,6 +151,12 @@ struct RecorderView: View {
                             .disabled(speechRecognizer.isRecording)
                             .frame(width: 80)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .onChange(of: nonSpeakingDuration) { oldValue, newValue in
+                                if newValue < 1 {
+                                    viewError = "Non speaking durationg cannot be less than 1s"
+                                    nonSpeakingDuration = oldValue
+                                }
+                            }
                     }
                 }
             }
