@@ -49,7 +49,7 @@ class SpeechRecognizer: ObservableObject {
         }
     }
 
-    private func resetSilenceTimer(_ pauseThreshold: Int) {
+    private func resetSilenceTimer(_ pauseThreshold: Float) {
         silenceTimer?.invalidate()
         silenceTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(pauseThreshold), repeats: false) { [weak self] _ in
             Log.info("Silence detected, stopping...")
@@ -57,7 +57,7 @@ class SpeechRecognizer: ObservableObject {
         }
     }
 
-    private func startNoSpeechTimer(_ nonSpeakingDuration: Int) {
+    private func startNoSpeechTimer(_ nonSpeakingDuration: Float) {
         noSpeechTimer?.invalidate()
         noSpeechTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(nonSpeakingDuration), repeats: false) { [weak self] _ in
             Log.info("No speech detected. Auto-stopping.")

@@ -13,8 +13,8 @@ struct AdvancedSettings {
     let nativeAudio: Bool
     let speechTimeout: Int
     let requestTimeout: Int
-    let pauseThreshold: Int
-    let nonSpeakingDuration: Int
+    let pauseThreshold: Float
+    let nonSpeakingDuration: Float
 }
 
 struct RecorderView: View {
@@ -28,14 +28,13 @@ struct RecorderView: View {
     @State private var nativeAudio = false
     @State private var speechTimeout = 0
     @State private var requestTimeout = 5
-    @State private var pauseThreshold = 2
-    @State private var nonSpeakingDuration = 3
+    @State private var pauseThreshold: Float = 1.5
+    @State private var nonSpeakingDuration: Float = 3.0
 
     let speechTimeoutRange = Array(0..<30)
     let requestTimeoutRange = Array(0..<60)
-    let pauseThresholdRange = Array(1..<5)
-    let nonSpeakingDurationRange = Array(1..<5)
 
+    @State private var viewError: String?
     @State private var statusMessage: String?
 
     private func setStatusMessage(_ text: String, _ clearDelay: Int = 3) {
@@ -129,14 +128,11 @@ struct RecorderView: View {
                         Text("Pause Threshold (Seconds)")
                             .foregroundColor(speechRecognizer.isRecording ? .gray : .primary)
                         Spacer()
-                        Picker("", selection: $pauseThreshold) {
-                            ForEach(pauseThresholdRange, id: \.self) {
-                                Text("\($0)").tag($0)
-                            }
-                        }
-                        .pickerStyle(MenuPickerStyle())
-                        .frame(width: 80)
-                        .disabled(speechRecognizer.isRecording)
+                        TextField("Enter value", value: $pauseThreshold, format: .number)
+                            .keyboardType(.decimalPad) // To allow decimal inputs
+                            .disabled(speechRecognizer.isRecording)
+                            .frame(width: 80)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
                     }
 
                     // Seconds of non-speaking audio to keep on both sides of the recording
@@ -144,14 +140,11 @@ struct RecorderView: View {
                         Text("Non Speaking Duration (Seconds)")
                             .foregroundColor(speechRecognizer.isRecording ? .gray : .primary)
                         Spacer()
-                        Picker("", selection: $nonSpeakingDuration) {
-                            ForEach(nonSpeakingDurationRange, id: \.self) {
-                                Text("\($0)").tag($0)
-                            }
-                        }
-                        .pickerStyle(MenuPickerStyle())
-                        .frame(width: 80)
-                        .disabled(speechRecognizer.isRecording)
+                        TextField("Enter value", value: $nonSpeakingDuration, format: .number)
+                            .keyboardType(.decimalPad) // To allow decimal inputs
+                            .disabled(speechRecognizer.isRecording)
+                            .frame(width: 80)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
                     }
                 }
             }
@@ -206,13 +199,17 @@ struct RecorderView: View {
             }
         }
         .alert("Error",
-               isPresented: .constant(speechRecognizer.audioEngineError != nil || speechRecognizer.recognitionError != nil)) {
+               isPresented: .constant(
+                speechRecognizer.audioEngineError != nil || speechRecognizer.recognitionError != nil || viewError != nil
+               )
+        ) {
             Button("OK", role: .cancel) {
                 speechRecognizer.audioEngineError = nil
                 speechRecognizer.recognitionError = nil
+                viewError = nil
             }
         } message: {
-            Text(speechRecognizer.audioEngineError ?? speechRecognizer.recognitionError ?? "Unknown error")
+            Text(viewError ?? speechRecognizer.audioEngineError ?? speechRecognizer.recognitionError ?? "Unknown error")
         }
     }
 }
