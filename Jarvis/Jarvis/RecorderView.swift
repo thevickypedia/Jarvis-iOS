@@ -23,9 +23,9 @@ struct RecorderView: View {
     let transitProtection: Bool
     let handleLogout: (_ clearActiveServers: Bool) -> Void
 
-    @AppStorage("nativeAudio") private var nativeAudio = false
-    @AppStorage("speechTimeout") private var speechTimeout = 0
-    @AppStorage("requestTimeout") private var requestTimeout = 5
+    @State private var nativeAudio = false
+    @State private var speechTimeout = 0
+    @State private var requestTimeout = 5
 
     let speechTimeoutRange = Array(0..<30)
     let requestTimeoutRange = Array(0..<60)
