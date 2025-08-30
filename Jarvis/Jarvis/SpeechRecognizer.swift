@@ -49,17 +49,17 @@ class SpeechRecognizer: ObservableObject {
         }
     }
 
-    private func resetSilenceTimer() {
+    private func resetSilenceTimer(_ pauseThreshold: Int) {
         silenceTimer?.invalidate()
-        silenceTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: false) { [weak self] _ in
+        silenceTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(pauseThreshold), repeats: false) { [weak self] _ in
             Log.info("Silence detected, stopping...")
             self?.stopRecording()
         }
     }
 
-    private func startNoSpeechTimer() {
+    private func startNoSpeechTimer(_ nonSpeakingDuration: Int) {
         noSpeechTimer?.invalidate()
-        noSpeechTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: false) { [weak self] _ in
+        noSpeechTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(nonSpeakingDuration), repeats: false) { [weak self] _ in
             Log.info("No speech detected. Auto-stopping.")
             self?.stopRecording()
         }
@@ -253,7 +253,7 @@ class SpeechRecognizer: ObservableObject {
             }
             audioEngine.prepare()
             try audioEngine.start()
-            self.startNoSpeechTimer()
+            self.startNoSpeechTimer(advancedSettings.nonSpeakingDuration)
 
             self.recognizedText = "Listening..."
             self.isRecording = true
@@ -289,7 +289,7 @@ class SpeechRecognizer: ObservableObject {
                             Log.debug("Partial: \(result.bestTranscription.formattedString)")
                         }
                         // Only reset silence timer if listener is still active
-                        self.resetSilenceTimer()
+                        self.resetSilenceTimer(advancedSettings.pauseThreshold)
                     }
                 }
 

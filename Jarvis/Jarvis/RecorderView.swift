@@ -13,6 +13,8 @@ struct AdvancedSettings {
     let nativeAudio: Bool
     let speechTimeout: Int
     let requestTimeout: Int
+    let pauseThreshold: Int
+    let nonSpeakingDuration: Int
 }
 
 struct RecorderView: View {
@@ -26,9 +28,14 @@ struct RecorderView: View {
     @State private var nativeAudio = false
     @State private var speechTimeout = 0
     @State private var requestTimeout = 5
+    @State private var pauseThreshold = 2
+    @State private var nonSpeakingDuration = 3
 
     let speechTimeoutRange = Array(0..<30)
     let requestTimeoutRange = Array(0..<60)
+    let pauseThresholdRange = Array(1..<5)
+    let nonSpeakingDurationRange = Array(1..<5)
+
     @State private var statusMessage: String?
 
     private func setStatusMessage(_ text: String, _ clearDelay: Int = 3) {
@@ -53,7 +60,9 @@ struct RecorderView: View {
                         advancedSettings: AdvancedSettings(
                             nativeAudio: nativeAudio,
                             speechTimeout: speechTimeout,
-                            requestTimeout: requestTimeout
+                            requestTimeout: requestTimeout,
+                            pauseThreshold: pauseThreshold,
+                            nonSpeakingDuration: nonSpeakingDuration
                         )
                     )
                 }) {
@@ -64,6 +73,7 @@ struct RecorderView: View {
                 }
 
                 DisclosureGroup("Server Settings") {
+                    // Use Server's Native Audio
                     Toggle("Native Audio", isOn: $nativeAudio)
                         .disabled(speechRecognizer.isRecording)
                         .foregroundColor(speechRecognizer.isRecording ? .gray : .primary)
@@ -96,13 +106,46 @@ struct RecorderView: View {
                             }
                         }
                     }
-                    
+
+                    // Request Timeout
                     HStack {
                         Text("Request Timeout (Seconds)")
                             .foregroundColor(speechRecognizer.isRecording ? .gray : .primary)
                         Spacer()
                         Picker("", selection: $requestTimeout) {
                             ForEach(requestTimeoutRange, id: \.self) {
+                                Text("\($0)").tag($0)
+                            }
+                        }
+                        .pickerStyle(MenuPickerStyle())
+                        .frame(width: 80)
+                        .disabled(speechRecognizer.isRecording)
+                    }
+                }
+
+                DisclosureGroup("Recognizer Settings") {
+                    // Seconds of non-speaking audio before a phrase is considered complete
+                    HStack {
+                        Text("Pause Threshold (Seconds)")
+                            .foregroundColor(speechRecognizer.isRecording ? .gray : .primary)
+                        Spacer()
+                        Picker("", selection: $pauseThreshold) {
+                            ForEach(pauseThresholdRange, id: \.self) {
+                                Text("\($0)").tag($0)
+                            }
+                        }
+                        .pickerStyle(MenuPickerStyle())
+                        .frame(width: 80)
+                        .disabled(speechRecognizer.isRecording)
+                    }
+
+                    // Seconds of non-speaking audio to keep on both sides of the recording
+                    HStack {
+                        Text("Non Speaking Duration (Seconds)")
+                            .foregroundColor(speechRecognizer.isRecording ? .gray : .primary)
+                        Spacer()
+                        Picker("", selection: $nonSpeakingDuration) {
+                            ForEach(nonSpeakingDurationRange, id: \.self) {
                                 Text("\($0)").tag($0)
                             }
                         }
