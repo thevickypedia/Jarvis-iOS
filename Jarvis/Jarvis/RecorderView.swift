@@ -54,16 +54,20 @@ struct RecorderView: View {
                         .frame(width: speechRecognizer.isRecording ? 60 : 80, height: 80)
                         .foregroundColor(.blue)
                 }
+
                 Toggle("Native Audio", isOn: $nativeAudio)
                     .disabled(speechRecognizer.isRecording)
+                    .foregroundColor(speechRecognizer.isRecording ? .gray : .primary) // Gray out when recording
                     .onChange(of: nativeAudio) { _, newValue in
                         // MARK: If nativeAudio is true, force speechTimeout to 0
                         if newValue {
                             speechTimeout = 0
                         }
                     }
+
                 HStack {
                     Text("Speech Timeout (Seconds)")
+                        .foregroundColor(speechRecognizer.isRecording ? .gray : .primary) // Gray out when recording
                     Spacer()
                     Picker("", selection: $speechTimeout) {
                         ForEach(speechTimeoutRange, id: \.self) {
@@ -80,8 +84,10 @@ struct RecorderView: View {
                         }
                     }
                 }
+
                 HStack {
                     Text("Request Timeout (Seconds)")
+                        .foregroundColor(speechRecognizer.isRecording ? .gray : .primary) // Gray out when recording
                     Spacer()
                     Picker("", selection: $requestTimeout) {
                         ForEach(requestTimeoutRange, id: \.self) {
