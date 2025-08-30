@@ -133,15 +133,26 @@ class SpeechRecognizer: ObservableObject {
         return result
     }
 
+    func updateRecognizedText(_ text: String, _ clearDelay: Int = 7) {
+        Log.info("Server response: \(text)")
+        DispatchQueue.main.async {
+            self.recognizedText = text
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(clearDelay)) {
+            self.recognizedText = "Tap the mic to speak..."
+        }
+    }
+
     func makeServerRequestSync(
         serverURL: String,
         password: String,
         transitProtection: Bool,
         command: String,
         advancedSettings: AdvancedSettings
-    ) -> String {
+    ) {
         guard let url = URL(string: "\(serverURL)/offline-communicator") else {
-            return "❌ Invalid URL"
+            updateRecognizedText("❌ Invalid URL", 3)
+            return
         }
 
         var request = URLRequest(url: url)
@@ -152,7 +163,6 @@ class SpeechRecognizer: ObservableObject {
         let authHeader = transitProtection ? "\\u" + convertStringToHex(password) : password
         request.setValue("Bearer \(authHeader)", forHTTPHeaderField: "Authorization")
 
-        // TODO: Set these args via advancedSettings
         let payload: [String: Any] = [
             "command": command,
             "native_audio": advancedSettings.nativeAudio,
@@ -162,7 +172,8 @@ class SpeechRecognizer: ObservableObject {
         do {
             request.httpBody = try JSONSerialization.data(withJSONObject: payload, options: [])
         } catch {
-            return "❌ Failed to encode JSON: \(error.localizedDescription)"
+            updateRecognizedText("❌ Failed to encode JSON: \(error.localizedDescription)", 3)
+            return
         }
 
         var result = "❌ Request timed out after 5 seconds"
@@ -202,7 +213,7 @@ class SpeechRecognizer: ObservableObject {
             result = "❌ Request timed out after 5 seconds"
         }
 
-        return result
+        updateRecognizedText(result)
     }
 
     func startRecording(serverURL: String, password: String, transitProtection: Bool, advancedSettings: AdvancedSettings) {
@@ -263,21 +274,13 @@ class SpeechRecognizer: ObservableObject {
                         let command = result.bestTranscription.formattedString
                         Log.info("Server request: \(command)")
                         DispatchQueue.global(qos: .userInitiated).async {
-                            let response = self.makeServerRequestSync(
+                            self.makeServerRequestSync(
                                 serverURL: serverURL,
                                 password: password,
                                 transitProtection: transitProtection,
                                 command: command,
                                 advancedSettings: advancedSettings
                             )
-                            // TODO: Move display logic to `makeServerRequestSync`
-                            Log.info("Server response: \(response)")
-                            DispatchQueue.main.async {
-                                self.recognizedText = response
-                            }
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 7) {
-                                self.recognizedText = "Tap the mic to speak..."
-                            }
                         }
                     } else {
                         DispatchQueue.main.async {
