@@ -29,6 +29,14 @@ struct RecorderView: View {
 
     let speechTimeoutRange = Array(0..<30)
     let requestTimeoutRange = Array(0..<60)
+    @State private var statusMessage: String?
+
+    private func setStatusMessage(_ text: String, _ clearDelay: Int = 3) {
+        statusMessage = text
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(clearDelay)) {
+            statusMessage = nil
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -61,6 +69,7 @@ struct RecorderView: View {
                     .onChange(of: nativeAudio) { _, newValue in
                         // MARK: If nativeAudio is true, force speechTimeout to 0
                         if newValue {
+                            setStatusMessage("⚠️ Disabled speech timeout!")
                             speechTimeout = 0
                         }
                     }
@@ -80,6 +89,7 @@ struct RecorderView: View {
                     .onChange(of: speechTimeout) { _, newValue in
                         // MARK: If speechTimeout has a value, force nativeAudio to false
                         if newValue > 0 {
+                            setStatusMessage("⚠️ Disabled native audio!")
                             nativeAudio = false
                         }
                     }
@@ -102,6 +112,14 @@ struct RecorderView: View {
             .padding()
             .onAppear {
                 speechRecognizer.requestPermissions()
+            }
+
+            if let displayMessage = statusMessage {
+                Text(displayMessage)
+                    .font(.caption)
+                    .foregroundColor(.orange)
+                    .padding()
+                    .transition(.opacity)
             }
 
             // 🔝 Logout Button at Top-Right
