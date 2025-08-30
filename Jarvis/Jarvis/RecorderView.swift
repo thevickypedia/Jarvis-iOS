@@ -68,7 +68,7 @@ struct RecorderView: View {
                     .foregroundColor(speechRecognizer.isRecording ? .gray : .primary) // Gray out when recording
                     .onChange(of: nativeAudio) { _, newValue in
                         // MARK: If nativeAudio is true, force speechTimeout to 0
-                        if newValue {
+                        if newValue && speechTimeout != 0 {
                             setStatusMessage("⚠️ Disabled speech timeout!")
                             speechTimeout = 0
                         }
@@ -88,7 +88,7 @@ struct RecorderView: View {
                     .disabled(speechRecognizer.isRecording)
                     .onChange(of: speechTimeout) { _, newValue in
                         // MARK: If speechTimeout has a value, force nativeAudio to false
-                        if newValue > 0 {
+                        if newValue > 0 && nativeAudio {
                             setStatusMessage("⚠️ Disabled native audio!")
                             nativeAudio = false
                         }
