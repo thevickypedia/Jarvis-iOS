@@ -16,6 +16,7 @@ struct RecorderView: View {
     let password: String
     let transitProtection: Bool
     let handleLogout: (_ clearActiveServers: Bool) -> Void
+    let advancedSettings: AdvancedSettings
 
     var body: some View {
         ZStack {
@@ -25,7 +26,12 @@ struct RecorderView: View {
                     .multilineTextAlignment(.center)
 
                 Button(action: {
-                    speechRecognizer.toggleRecording(serverURL: serverURL, password: password, transitProtection: transitProtection)
+                    speechRecognizer.toggleRecording(
+                        serverURL: serverURL,
+                        password: password,
+                        transitProtection: transitProtection,
+                        advancedSettings: advancedSettings
+                    )
                 }) {
                     Image(systemName: speechRecognizer.isRecording ? "mic.fill" : "mic.circle")
                         .resizable()

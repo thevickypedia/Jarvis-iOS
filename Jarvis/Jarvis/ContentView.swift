@@ -17,6 +17,10 @@ struct ContentView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @AppStorage("transitProtection") private var transitProtection = false
 
+    @State private var showAdvancedOptions = false
+    @AppStorage("nativeAudio") private var nativeAudio = false
+    @AppStorage("speechTimeout") private var speechTimeout = 0
+
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var isLoggedIn = false
@@ -24,10 +28,20 @@ struct ContentView: View {
     @State private var statusMessage: String?
 
     var body: some View {
+        let advancedSettings = AdvancedSettings(
+            nativeAudio: nativeAudio,
+            speechTimeout: speechTimeout
+        )
         NavigationStack {
             Group {
                 if isLoggedIn {
-                    RecorderView(serverURL: serverURL, password: password, transitProtection: transitProtection, handleLogout: handleLogout)
+                    RecorderView(
+                        serverURL: serverURL,
+                        password: password,
+                        transitProtection: transitProtection,
+                        handleLogout: handleLogout,
+                        advancedSettings: advancedSettings
+                    )
                 } else {
                     loginView
                 }
@@ -118,6 +132,13 @@ struct ContentView: View {
                     }
                 }
                 .disabled(isLoading)
+            }
+
+            Section {
+                AdvancedSettingsView(
+                    nativeAudio: $nativeAudio,
+                    speechTimeout: $speechTimeout
+                )
             }
 
             if let statusMessage = statusMessage {

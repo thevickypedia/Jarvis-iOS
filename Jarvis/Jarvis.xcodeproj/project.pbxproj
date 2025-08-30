@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXContainerItemProxy section */
@@ -30,7 +30,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		98A2AA462E60D37000FB3A6A /* Exceptions for "Jarvis" folder in "Jarvis" target */ = {
+		98A2AA462E60D37000FB3A6A /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -40,24 +40,9 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		98A2AA0E2E6067B100FB3A6A /* Jarvis */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				98A2AA462E60D37000FB3A6A /* Exceptions for "Jarvis" folder in "Jarvis" target */,
-			);
-			path = Jarvis;
-			sourceTree = "<group>";
-		};
-		98A2AA1D2E6067B400FB3A6A /* JarvisTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = JarvisTests;
-			sourceTree = "<group>";
-		};
-		98A2AA272E6067B400FB3A6A /* JarvisUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = JarvisUITests;
-			sourceTree = "<group>";
-		};
+		98A2AA0E2E6067B100FB3A6A /* Jarvis */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (98A2AA462E60D37000FB3A6A /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Jarvis; sourceTree = "<group>"; };
+		98A2AA1D2E6067B400FB3A6A /* JarvisTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = JarvisTests; sourceTree = "<group>"; };
+		98A2AA272E6067B400FB3A6A /* JarvisUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = JarvisUITests; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -200,6 +185,7 @@
 				};
 			};
 			buildConfigurationList = 98A2AA072E6067B100FB3A6A /* Build configuration list for PBXProject "Jarvis" */;
+			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (

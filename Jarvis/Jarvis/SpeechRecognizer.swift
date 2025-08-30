@@ -137,7 +137,8 @@ class SpeechRecognizer: ObservableObject {
         serverURL: String,
         password: String,
         transitProtection: Bool,
-        command: String
+        command: String,
+        advancedSettings: AdvancedSettings
     ) -> String {
         guard let url = URL(string: "\(serverURL)/offline-communicator") else {
             return "❌ Invalid URL"
@@ -154,8 +155,8 @@ class SpeechRecognizer: ObservableObject {
         // TODO: Set these args via advancedSettings
         let payload: [String: Any] = [
             "command": command,
-            "native_audio": true,
-            "speech_timeout": 0
+            "native_audio": advancedSettings.nativeAudio,
+            "speech_timeout": advancedSettings.speechTimeout
         ]
 
         do {
@@ -193,9 +194,10 @@ class SpeechRecognizer: ObservableObject {
             }
         }.resume()
 
-        // ⏱ Block for up to 5 seconds
-        // TODO: Set delay based on request payload (native_audio || speech_timeout)
-        let timeoutResult = semaphore.wait(timeout: .now() + 50)
+        let delay: DispatchTimeInterval = (
+            advancedSettings.nativeAudio || advancedSettings.speechTimeout != 0
+        ) ? .seconds(30) : .seconds(5)
+        let timeoutResult = semaphore.wait(timeout: .now() + delay)
         if timeoutResult == .timedOut {
             result = "❌ Request timed out after 5 seconds"
         }
@@ -203,7 +205,7 @@ class SpeechRecognizer: ObservableObject {
         return result
     }
 
-    func startRecording(serverURL: String, password: String, transitProtection: Bool) {
+    func startRecording(serverURL: String, password: String, transitProtection: Bool, advancedSettings: AdvancedSettings) {
         #if targetEnvironment(simulator)
         Log.error("Simulator can't use microphone input.")
         DispatchQueue.main.async {
@@ -265,10 +267,14 @@ class SpeechRecognizer: ObservableObject {
                                 serverURL: serverURL,
                                 password: password,
                                 transitProtection: transitProtection,
-                                command: command
+                                command: command,
+                                advancedSettings: advancedSettings
                             )
                             // TODO: Move display logic to `makeServerRequestSync`
                             Log.info("Server response: \(response)")
+                            DispatchQueue.main.async {
+                                self.recognizedText = response
+                            }
                             DispatchQueue.main.asyncAfter(deadline: .now() + 7) {
                                 self.recognizedText = "Tap the mic to speak..."
                             }
@@ -321,11 +327,21 @@ class SpeechRecognizer: ObservableObject {
         }
     }
 
-    func toggleRecording(serverURL: String, password: String, transitProtection: Bool) {
+    func toggleRecording(
+        serverURL: String,
+        password: String,
+        transitProtection: Bool,
+        advancedSettings: AdvancedSettings
+    ) {
         if isRecording {
             stopRecording()
         } else {
-            startRecording(serverURL: serverURL, password: password, transitProtection: transitProtection)
+            startRecording(
+                serverURL: serverURL,
+                password: password,
+                transitProtection: transitProtection,
+                advancedSettings: advancedSettings
+            )
         }
     }
 }
