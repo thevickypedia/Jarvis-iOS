@@ -49,7 +49,7 @@ class SpeechRecognizer: ObservableObject {
         }
     }
 
-    private func resetSilenceTimer(_ pauseThreshold: Float) {
+    private func resetSilenceTimer(_ pauseThreshold: Double) {
         silenceTimer?.invalidate()
         silenceTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(pauseThreshold), repeats: false) { [weak self] _ in
             Log.info("Silence detected, stopping...")
@@ -57,7 +57,7 @@ class SpeechRecognizer: ObservableObject {
         }
     }
 
-    private func startNoSpeechTimer(_ nonSpeakingDuration: Float) {
+    private func startNoSpeechTimer(_ nonSpeakingDuration: Double) {
         noSpeechTimer?.invalidate()
         noSpeechTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(nonSpeakingDuration), repeats: false) { [weak self] _ in
             Log.info("No speech detected. Auto-stopping.")
@@ -70,21 +70,24 @@ class SpeechRecognizer: ObservableObject {
         noSpeechTimer = nil
     }
 
-    func parseTextResponse(data: Data?) -> String {
+    func parseTextResponse(data: Data?) -> (response: String, delay: Int) {
         guard let textData = data else {
-            return "❌ Empty response body."
+            return (response: "❌ Empty response body.", delay: 3)
         }
         do {
             let decoded = try JSONDecoder().decode(ServerResponse.self, from: textData)
-            return decoded.detail
+            return (response: decoded.detail, delay: 7)
         } catch {
-            return String(data: textData, encoding: .utf8) ?? "❌ JSON parsing failed and response is undecodable."
+            return (
+                response: String(data: textData, encoding: .utf8) ?? "❌ JSON parsing failed and response is undecodable.",
+                delay: 4
+            )
         }
     }
 
-    func parseAudioResponse(data: Data?) -> String {
+    func parseAudioResponse(data: Data?) -> (response: String, delay: Int) {
         guard let audioData = data else {
-            return "❌ Empty response body."
+            return (response: "❌ Empty response body.", delay: 3)
         }
         var result = ""
         let fileManager = FileManager.default
@@ -97,11 +100,11 @@ class SpeechRecognizer: ObservableObject {
             Log.debug("✅ Audio file saved to \(audioFileURL)")
 
             // Ensure the file exists
-            if fileManager.fileExists(atPath: audioFileURL.path) {
-                Log.debug("✅ Audio file exists: \(audioFileURL.path)")
-            } else {
-                Log.debug("❌ Audio file does not exist.")
-            }
+            // if fileManager.fileExists(atPath: audioFileURL.path) {
+            //     Log.debug("✅ Audio file exists: \(audioFileURL.path)")
+            // } else {
+            //     Log.debug("❌ Audio file does not exist.")
+            // }
 
             // Set up the audio session to allow playback
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: .mixWithOthers)
@@ -127,11 +130,10 @@ class SpeechRecognizer: ObservableObject {
             } catch {
                 Log.debug("❌ Failed to delete audio file: \(error.localizedDescription)")
             }
-            result = "✅ Played and deleted audio file"
+            return (response: "✅ Played and deleted audio file", delay: 1)
         } catch {
-            result = "❌ Audio error: \(error.localizedDescription)"
+            return (response: "❌ Audio error: \(error.localizedDescription)", delay: 5)
         }
-        return result
     }
 
     func updateRecognizedText(_ text: String, _ clearDelay: Int = 7) {
@@ -178,6 +180,7 @@ class SpeechRecognizer: ObservableObject {
         }
 
         var result = ""
+        var delay = 3
         let semaphore = DispatchSemaphore(value: 0)
 
         URLSession.shared.dataTask(with: request) { data, response, error in
@@ -193,16 +196,23 @@ class SpeechRecognizer: ObservableObject {
                 return
             }
 
+            var parsedResponse: (response: String, delay: Int)
             if httpResponse.statusCode == 200 {
                 Log.debug("✅ Server request successful")
                 let contentType = httpResponse.value(forHTTPHeaderField: "Content-Type") ?? "NO MATCH"
                 if contentType == "application/octet-stream", let data = data {
-                    result = self.parseAudioResponse(data: data)
+                    DispatchQueue.main.async {
+                        self.recognizedText = "Response received as audio"
+                    }
+                    parsedResponse = self.parseAudioResponse(data: data)
                 } else {
-                    result = self.parseTextResponse(data: data)
+                    parsedResponse = self.parseTextResponse(data: data)
                 }
+                result = parsedResponse.response
+                delay = parsedResponse.delay
             } else {
                 result = "❌ Server response: [\(httpResponse.statusCode)]: \(HTTPURLResponse.localizedString(forStatusCode: httpResponse.statusCode))"
+                delay = 4
             }
         }.resume()
 
@@ -214,7 +224,7 @@ class SpeechRecognizer: ObservableObject {
             }
         }
 
-        updateRecognizedText(result)
+        updateRecognizedText(result, delay)
     }
 
     func startRecording(serverURL: String, password: String, transitProtection: Bool, advancedSettings: AdvancedSettings) {
