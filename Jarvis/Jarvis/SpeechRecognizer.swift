@@ -89,7 +89,6 @@ class SpeechRecognizer: ObservableObject {
         guard let audioData = data else {
             return (response: "❌ Empty response body.", delay: 3)
         }
-        var result = ""
         let fileManager = FileManager.default
         let tempDirectory = fileManager.temporaryDirectory
         let audioFileURL = tempDirectory.appendingPathComponent("speech_file.wav")
@@ -130,7 +129,7 @@ class SpeechRecognizer: ObservableObject {
             } catch {
                 Log.debug("❌ Failed to delete audio file: \(error.localizedDescription)")
             }
-            return (response: "✅ Played and deleted audio file", delay: 1)
+            return (response: "Played and deleted audio file", delay: 1)
         } catch {
             return (response: "❌ Audio error: \(error.localizedDescription)", delay: 5)
         }
