@@ -13,8 +13,8 @@ struct AdvancedSettings {
     let nativeAudio: Bool
     let speechTimeout: Int
     let requestTimeout: Int
-    let pauseThreshold: Float
-    let nonSpeakingDuration: Float
+    let pauseThreshold: Double
+    let nonSpeakingDuration: Double
 }
 
 struct RecorderView: View {
@@ -25,11 +25,11 @@ struct RecorderView: View {
     let transitProtection: Bool
     let handleLogout: (_ clearActiveServers: Bool) -> Void
 
-    @State private var nativeAudio = false
-    @State private var speechTimeout = 0
-    @State private var requestTimeout = 5
-    @State private var pauseThreshold: Float = 1.5
-    @State private var nonSpeakingDuration: Float = 3.0
+    @AppStorage("nativeAudio") private var nativeAudio = false
+    @AppStorage("speechTimeout") private var speechTimeout = 0
+    @AppStorage("requestTimeout") private var requestTimeout = 5
+    @AppStorage("pauseThreshold") private var pauseThreshold: Double = 1.5
+    @AppStorage("nonSpeakingDuration") private var nonSpeakingDuration: Double = 3.0
 
     let speechTimeoutRange = Array(0..<30)
     let requestTimeoutRange = Array(0..<60)
@@ -83,7 +83,7 @@ struct RecorderView: View {
                                 speechTimeout = 0
                             }
                         }
-                    
+
                     // Speech Synthesis Timeout
                     HStack {
                         Text("Speech Synthesis Timeout (Seconds)")
