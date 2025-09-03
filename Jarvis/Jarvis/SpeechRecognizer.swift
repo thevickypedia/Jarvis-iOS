@@ -26,6 +26,7 @@ class SpeechRecognizer: ObservableObject {
     private var recognitionTask: SFSpeechRecognitionTask?
     private var silenceTimer: Timer?
     private var noSpeechTimer: Timer?
+    private var player: AVAudioPlayer?
 
     func requestPermissions() {
         SFSpeechRecognizer.requestAuthorization { authStatus in
@@ -106,14 +107,26 @@ class SpeechRecognizer: ObservableObject {
             // }
 
             // Set up the audio session to allow playback
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: .mixWithOthers)
-            try AVAudioSession.sharedInstance().setActive(true)
+            let audioSession = AVAudioSession.sharedInstance()
+            try audioSession.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
+            try audioSession.overrideOutputAudioPort(.speaker) // 🔈 Force speaker output
+            try audioSession.setActive(true)
+
+            for output in audioSession.currentRoute.outputs {
+                Log.debug("🔈 Output Port: \(output.portType.rawValue)")
+            }
 
             // Keep player as a class-level variable to avoid it being deallocated
-            var player: AVAudioPlayer?
-            player = try AVAudioPlayer(contentsOf: audioFileURL)
-            player?.volume = 1.0 // Max volume (0.0 to 1.0)
-            player?.play()
+            self.player = try AVAudioPlayer(contentsOf: audioFileURL)
+            self.player?.volume = 1.0
+            self.player?.prepareToPlay()
+            let duration = player?.duration
+            if duration == 0 {
+                Log.debug("❌ Invalid audio file. Duration = 0")
+            } else if let dur = duration {
+                Log.debug("Audio duration: \(dur)")
+            }
+            self.player?.play()
 
             // TODO: Play audio in the background
             // ✅ Block until audio finishes playing

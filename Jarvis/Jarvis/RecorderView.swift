@@ -17,6 +17,9 @@ struct AdvancedSettings {
     let nonSpeakingDuration: Double
 }
 
+let defaultPauseThreshold = 1.5
+let defaultNonSpeakingDuration = 3.0
+
 struct RecorderView: View {
     @StateObject private var speechRecognizer = SpeechRecognizer()
     @EnvironmentObject var themeManager: ThemeManager
@@ -28,8 +31,8 @@ struct RecorderView: View {
     @AppStorage("nativeAudio") private var nativeAudio = false
     @AppStorage("speechTimeout") private var speechTimeout = 0
     @AppStorage("requestTimeout") private var requestTimeout = 5
-    @AppStorage("pauseThreshold") private var pauseThreshold: Double = 1.5
-    @AppStorage("nonSpeakingDuration") private var nonSpeakingDuration: Double = 3.0
+    @AppStorage("pauseThreshold") private var pauseThreshold: Double = defaultPauseThreshold
+    @AppStorage("nonSpeakingDuration") private var nonSpeakingDuration: Double = defaultNonSpeakingDuration
 
     let speechTimeoutRange = Array(0..<30)
     let requestTimeoutRange = Array(0..<60)
@@ -76,7 +79,7 @@ struct RecorderView: View {
                     Toggle("Native Audio", isOn: $nativeAudio)
                         .disabled(speechRecognizer.isRecording)
                         .foregroundColor(speechRecognizer.isRecording ? .gray : .primary)
-                        .onChange(of: nativeAudio) { _, newValue in
+                        .onChange(of: nativeAudio) { newValue in
                             // MARK: If nativeAudio is true, force speechTimeout to 0
                             if newValue && speechTimeout != 0 {
                                 setStatusMessage("⚠️ Disabled speech synthesis!")
@@ -97,7 +100,7 @@ struct RecorderView: View {
                         .pickerStyle(MenuPickerStyle())
                         .frame(width: 80)
                         .disabled(speechRecognizer.isRecording)
-                        .onChange(of: speechTimeout) { _, newValue in
+                        .onChange(of: speechTimeout) { newValue in
                             // MARK: If speechTimeout has a value, force nativeAudio to false
                             if newValue > 0 && nativeAudio {
                                 setStatusMessage("⚠️ Disabled native audio!")
@@ -133,10 +136,10 @@ struct RecorderView: View {
                             .disabled(speechRecognizer.isRecording)
                             .frame(width: 80)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .onChange(of: pauseThreshold) { oldValue, newValue in
+                            .onChange(of: pauseThreshold) { newValue in
                                 if newValue < 1 {
                                     viewError = "Pause threshold cannot be less than 1s"
-                                    pauseThreshold = oldValue
+                                    pauseThreshold = defaultPauseThreshold
                                 }
                             }
                     }
@@ -151,10 +154,10 @@ struct RecorderView: View {
                             .disabled(speechRecognizer.isRecording)
                             .frame(width: 80)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .onChange(of: nonSpeakingDuration) { oldValue, newValue in
+                            .onChange(of: nonSpeakingDuration) { newValue in
                                 if newValue < 1 {
                                     viewError = "Non speaking durationg cannot be less than 1s"
-                                    nonSpeakingDuration = oldValue
+                                    nonSpeakingDuration = defaultNonSpeakingDuration
                                 }
                             }
                     }
