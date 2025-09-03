@@ -7,28 +7,28 @@ on:
         type: string
         description: iPhone version to run tests on
         required: false
-        default: "15"
+        default: "16"
       iOSVersion:
         type: string
         description: iOS version to run tests on
         required: false
-        default: "17.4"
+        default: "18.5"
   workflow_call:
     inputs:
       iPhoneVersion:
         type: string
         description: iPhone version to run tests on
         required: false
-        default: "15"
+        default: "16"
       iOSVersion:
         type: string
         description: iOS version to run tests on
         required: false
-        default: "17.4"
+        default: "18.5"
 
 jobs:
   test:
-    runs-on: macos-14
+    runs-on: macos-latest
 
     steps:
       - name: Checkout repository
