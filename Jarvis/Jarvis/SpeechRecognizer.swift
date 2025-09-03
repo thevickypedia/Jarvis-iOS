@@ -108,8 +108,7 @@ class SpeechRecognizer: ObservableObject {
 
             // Set up the audio session to allow playback
             let audioSession = AVAudioSession.sharedInstance()
-            try audioSession.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
-            try audioSession.overrideOutputAudioPort(.speaker) // 🔈 Force speaker output
+            try audioSession.setCategory(.playback, mode: .default, options: .mixWithOthers)
             try audioSession.setActive(true)
 
             for output in audioSession.currentRoute.outputs {
@@ -120,11 +119,22 @@ class SpeechRecognizer: ObservableObject {
             self.player = try AVAudioPlayer(contentsOf: audioFileURL)
             self.player?.volume = 1.0
             self.player?.prepareToPlay()
-            let duration = player?.duration
-            if duration == 0 {
-                Log.debug("❌ Invalid audio file. Duration = 0")
-            } else if let dur = duration {
-                Log.debug("Audio duration: \(dur)")
+            var msg: String
+            if let duration = player?.duration {
+                if duration == 0 {
+                    msg = "Invalid audio file. Duration = 0"
+                    Log.warn("❌ \(msg)")
+                } else {
+                    let formattedDuration = String(format: "%.2f", duration)
+                    msg = "Audio duration: \(formattedDuration)"
+                    Log.debug("✅ \(msg)")
+                }
+            } else {
+                msg = "Failed to retrieve audio duration"
+                Log.warn("❌ \(msg)")
+            }
+            DispatchQueue.main.async {
+                self.recognizedText = msg
             }
             self.player?.play()
 
