@@ -26,6 +26,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Ensure full history for tag lookup
 
       - name: Check GH Tag
         id: check_release
@@ -47,13 +49,19 @@ jobs:
         run: |
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
-          git fetch --prune --unshallow
-          git fetch --tags
-          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^)
+
+          # Get latest tag before HEAD, fallback to root commit if none
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || git rev-list --max-parents=0 HEAD | tail -n 1)
+
           echo "::notice title=Previous Release::${PREV_TAG}"
           echo "::notice title=Current Release::v${{ inputs.project_version }}"
           repository="${{ github.server_url }}/${{ github.repository }}"
-          git log "${PREV_TAG}..HEAD" --pretty=format:"- [%h](${repository}/commit/%H) %s" --no-merges > release_notes.txt
+          # If PREV_TAG is a commit (not a tag), don't include ".."
+          if git tag --list | grep -q "^${PREV_TAG}$"; then
+            git log "${PREV_TAG}..HEAD" --pretty=format:"- [%h](${repository}/commit/%H) %s" --no-merges > release_notes.txt
+          else
+            git log --pretty=format:"- [%h](${repository}/commit/%H) %s" --no-merges > release_notes.txt
+          fi
           cat release_notes.txt
 
       - name: Create Release
