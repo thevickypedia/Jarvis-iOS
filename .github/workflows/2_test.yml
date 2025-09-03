@@ -54,7 +54,6 @@ jobs:
 
       - name: Run test
         run: |
-          export IDEFileSystemSynchronizedGroupsEnabled=NO
           xcodebuild test -scheme Jarvis \
             -destination 'platform=iOS Simulator,name=iPhone ${{ env.iPhoneVersion }},OS=${{ env.iOSVersion }}' \
             -only-testing:JarvisTests/testExample \
