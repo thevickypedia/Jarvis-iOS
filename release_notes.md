@@ -1,0 +1,59 @@
+Release Notes
+=============
+
+v0.0.1 (09/03/2025)
+-------------------
+- [f36a53a](https://github.com/thevickypedia/Jarvis-iOS/commit/f36a53a17221b7a7e0f29ccaa4d753cb7263e2a1) chore: Release ``v0.0.1``
+- [c6c9fea](https://github.com/thevickypedia/Jarvis-iOS/commit/c6c9fea06fb6b9a46bf054c13fab3e32af75c61d) ci: Handle project version that's already prefixed with ``v``
+- [ad175f9](https://github.com/thevickypedia/Jarvis-iOS/commit/ad175f9ece9673d9674bfebbfbb84e028f81d0e1) ci: Fix release pipeline with no previous tags
+- [5626961](https://github.com/thevickypedia/Jarvis-iOS/commit/562696112e6929992e7300222f9a3753142370aa) ci: Update iOS and iPhone version for build workflow
+- [5b45847](https://github.com/thevickypedia/Jarvis-iOS/commit/5b458477f5dbffe8e93cec86fbe1e4ffccb878f6) ci: Fix iOS version in CI tests
+- [e12ab77](https://github.com/thevickypedia/Jarvis-iOS/commit/e12ab77b1e29f50aad893172e928949737a1e28d) ci: Remove ``IDEFileSystemSynchronizedGroupsEnabled`` flag in CI tests
+- [c2e4563](https://github.com/thevickypedia/Jarvis-iOS/commit/c2e45638eea1da26411f59e96b0428408d934a4f) fix: Avoid overriding to default speaker
+- [820c55e](https://github.com/thevickypedia/Jarvis-iOS/commit/820c55e07155e13035bbbc620a4d02fb84c404f9) perf: Update upper and lower bound values for request and speech timeouts
+- [0609d14](https://github.com/thevickypedia/Jarvis-iOS/commit/0609d14609a9a5c663a7c51cc51ac83d206dd357) refactor: Downgrade object version and refactor code to match
+- [3f0d960](https://github.com/thevickypedia/Jarvis-iOS/commit/3f0d960f83075fb3c0489e7b0dc226d39cd571ce) style: Remove UTF-8 icon in display text
+- [b400565](https://github.com/thevickypedia/Jarvis-iOS/commit/b40056552f1aad4fca12ac743b226cad777107b1) perf: Add custom delay factors for on-screen text for each response
+- [9d72946](https://github.com/thevickypedia/Jarvis-iOS/commit/9d7294694a0efebb0f02afe2279142ca70a9cb72) perf: Store all advanced settings in ``AppStorage``
+- [893b77f](https://github.com/thevickypedia/Jarvis-iOS/commit/893b77f1b85e3bbb9d8b5b559818c7fe3f4434ad) perf: Add safety checks for recognizer settings
+- [2f5746b](https://github.com/thevickypedia/Jarvis-iOS/commit/2f5746ba32660beca9d6702ed0625c4349a996bd) style: Change recognizer settings to user inputs
+- [6a8b648](https://github.com/thevickypedia/Jarvis-iOS/commit/6a8b64847e502a1b05641936d4f5a412459db16f) feat: Add a new disclosure group to control pause threshold and non speaking duration
+- [3d1ba99](https://github.com/thevickypedia/Jarvis-iOS/commit/3d1ba99a4196be091bfd1e58a06155bccab9bddd) style: Move advanced settings with a disclosure group
+- [71390d5](https://github.com/thevickypedia/Jarvis-iOS/commit/71390d565ceeac7da7c8c80e897826cea2d0c25f) fix: Set status messages only when appropriate
+- [e0289ba](https://github.com/thevickypedia/Jarvis-iOS/commit/e0289bad54759af5aa77e020ed345694f1e656f7) fix: Set advanced settings as ``State`` instead of ``AppStorage``
+- [8ac3ef0](https://github.com/thevickypedia/Jarvis-iOS/commit/8ac3ef0127f6ac050fc235e6009eab56d607e60d) style: Display tiny status message with delay factor when forcing advaced settings
+- [7b62a68](https://github.com/thevickypedia/Jarvis-iOS/commit/7b62a683bdae60dd15b535cd72381dae88489620) style: Gray out advanced settings' buttons when a server request is inflight
+- [931a6a2](https://github.com/thevickypedia/Jarvis-iOS/commit/931a6a286d71ead180a26630015603ff4a1d5371) perf: Move ``advancedSettings`` from main menu to recorder view - set options for each request
+- [181aabb](https://github.com/thevickypedia/Jarvis-iOS/commit/181aabbfadea0e315999dd171e786f49d8bdfab6) refactor: Move updates to on-screen text inside a single async block
+- [adc9610](https://github.com/thevickypedia/Jarvis-iOS/commit/adc9610697bf75e9c3d2d1ad1efcec7d3d037d8d) feat: Include an option let user control the native audio and speech timeout
+- [ed79762](https://github.com/thevickypedia/Jarvis-iOS/commit/ed797628eecf7de850a401e45ad2c440f7fa7392) feat: Add a new feature to play audio response from the server
+- [2ff9e86](https://github.com/thevickypedia/Jarvis-iOS/commit/2ff9e8648f1d31e8f77c37445d490082728639e6) ci: Disable IDE file system sync groups
+- [6059280](https://github.com/thevickypedia/Jarvis-iOS/commit/6059280fdfd5492100b34ab30997c3dad11fbb55) test: Add basic functional test
+- [254991f](https://github.com/thevickypedia/Jarvis-iOS/commit/254991f08d08ed2760a7eeb95754092865293ebe) chore: Downgrade project version to 56
+- [109e170](https://github.com/thevickypedia/Jarvis-iOS/commit/109e1708e165efb7c28970dc39b229d3a792d35c) ci: Add GHA workflows to lint, test, build, release and update release notes
+- [5a25c0b](https://github.com/thevickypedia/Jarvis-iOS/commit/5a25c0b9da711d1c4f6dcf0b980878796c805833) style: Keep on-screen processing message until server responds
+- [b7464f5](https://github.com/thevickypedia/Jarvis-iOS/commit/b7464f5ff8ed1cbe0b17755f522dd55f7d44dd05) fix: Await audio engine before calling recognizer
+- [16f6fe9](https://github.com/thevickypedia/Jarvis-iOS/commit/16f6fe92093bc53322ab5ada8f4683ae96470347) style: Display errors as pop up alerts
+- [dce4878](https://github.com/thevickypedia/Jarvis-iOS/commit/dce4878c4a9ce0688bf9386f8338675075f3a770) perf: Use a struct to decode server response
+- [6df3ed6](https://github.com/thevickypedia/Jarvis-iOS/commit/6df3ed666ffc53677b635da7ae73540a6712bd29) style: Set button width according to listener status
+- [710a810](https://github.com/thevickypedia/Jarvis-iOS/commit/710a8101a46534b93f6c4c0c77bda19d4a65485a) style: Parse JSON response from the server and display and string
+- [903c3ab](https://github.com/thevickypedia/Jarvis-iOS/commit/903c3abd8bcce954eb30602c346480140e61ea02) perf: Set a timeuot for server requests
+- [499bd91](https://github.com/thevickypedia/Jarvis-iOS/commit/499bd9130581ffa8475c87eb7172831860493b48) fix: Block recording until server responds
+- [ab76c19](https://github.com/thevickypedia/Jarvis-iOS/commit/ab76c1905e9541a7e811d254189c83d444876399) feat: Make server request with recorded text
+- [114b628](https://github.com/thevickypedia/Jarvis-iOS/commit/114b6284770a506bdec87a5d56b21152563e204d) refactor: Split recorder view into its own module
+- [4e9419c](https://github.com/thevickypedia/Jarvis-iOS/commit/4e9419ce0dee2ee66b50738b440b0533c89e76bf) feat: Add a toggle switch to hex encode the password
+- [6e32a6b](https://github.com/thevickypedia/Jarvis-iOS/commit/6e32a6be50caa03471605d9d574b577559252a9b) fix: Await biometric signin until server hand-shake is complete
+- [b119010](https://github.com/thevickypedia/Jarvis-iOS/commit/b1190108fe4726a34aad253f1274feda0ff31f0f) style: Add logout and theme buttons to recording page
+- [e5d920f](https://github.com/thevickypedia/Jarvis-iOS/commit/e5d920f4de6bff87ec273db82e73f1464956d943) lint: Fix linting
+- [d09bc40](https://github.com/thevickypedia/Jarvis-iOS/commit/d09bc408c61c9b07cc354983d2e4a5df5adc9107) feat: Include a custom logger
+- [3ba519e](https://github.com/thevickypedia/Jarvis-iOS/commit/3ba519e9264a5169893a14221ab466986a060beb) style: Add night mode toggle and footer section in the login page
+- [d24c55d](https://github.com/thevickypedia/Jarvis-iOS/commit/d24c55dea470c5e48a4636e3485cde67daac1d7f) feat: Integrate FaceID and server authentication
+- [b049f5a](https://github.com/thevickypedia/Jarvis-iOS/commit/b049f5aa7f84887f4772dd837160be27c2df5ee5) style: Add more logo options to display in login UI
+- [a1f3791](https://github.com/thevickypedia/Jarvis-iOS/commit/a1f379113d59c7edb6bbd3f4e4fe7ad4ba66293f) style: Add app icons
+- [67bdd11](https://github.com/thevickypedia/Jarvis-iOS/commit/67bdd11f4ae0d31ef1d44891c899a6bdf29da2a5) perf: Differentiate partial and final results of recognized text
+- [f0b7565](https://github.com/thevickypedia/Jarvis-iOS/commit/f0b756589e306756c576847b51cbb8892f102874) feat: Stop listening if no audio has been heard
+- [889f80e](https://github.com/thevickypedia/Jarvis-iOS/commit/889f80e5abf47ccd2b8f7bfb5b04d2263e13eab3) feat: Implement a silence detector to stop listening after a pause
+- [d7ae445](https://github.com/thevickypedia/Jarvis-iOS/commit/d7ae445c70ff90133e91e6653ba30c679d057039) perf: Handle invalid input format for recorded audio
+- [30b633b](https://github.com/thevickypedia/Jarvis-iOS/commit/30b633bd8c765052ad637678a6d71cb886216f55) feat: Add a feature to record audio through microphone
+- [8af0351](https://github.com/thevickypedia/Jarvis-iOS/commit/8af03511783bf2d9520538d5be545a520131c1d3) chore: Create a new hello world project in XCode
+- [f9944af](https://github.com/thevickypedia/Jarvis-iOS/commit/f9944af4967f59a1c3adf57e07bc2d59e596aedc) Initial commit
