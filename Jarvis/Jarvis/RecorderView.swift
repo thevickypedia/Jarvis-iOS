@@ -34,8 +34,8 @@ struct RecorderView: View {
     @AppStorage("pauseThreshold") private var pauseThreshold: Double = defaultPauseThreshold
     @AppStorage("nonSpeakingDuration") private var nonSpeakingDuration: Double = defaultNonSpeakingDuration
 
-    let speechTimeoutRange = Array(0..<30)
-    let requestTimeoutRange = Array(0..<60)
+    let speechTimeoutRange = Array(0..<31)
+    let requestTimeoutRange = Array(2..<61)
 
     @State private var viewError: String?
     @State private var statusMessage: String?
